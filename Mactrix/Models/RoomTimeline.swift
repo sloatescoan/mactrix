@@ -15,8 +15,6 @@ import MatrixRustSDK
     var timelineItems: [TimelineItem] = []
     
     init(room: Room) async throws {
-        print("Load timeline for room \(room.id)")
-        
         timeline = try await room.timeline()
         
         // Listen to timeline item updates.
@@ -27,7 +25,6 @@ import MatrixRustSDK
 extension RoomTimeline: TimelineListener {
     func onUpdate(diff: [TimelineDiff]) {
         for update in diff {
-            print("Timeline update: \(update)")
             switch update {
             case .append(let values):
                 timelineItems.append(contentsOf: values)
@@ -52,7 +49,6 @@ extension RoomTimeline: TimelineListener {
             case .reset(values: let values):
                 timelineItems = values
             }
-            print("- new values: \(timelineItems.map { $0.asEvent().debugDescription })")
         }
     }
 }

@@ -34,6 +34,7 @@ struct ChatInput: View {
 struct ChatMessage: View {
     
     let event: EventTimelineItem
+    let msg: MsgLikeContent
     
     var name: String {
         if case let .ready(displayName, _, _) = event.senderProfile, let displayName = displayName {
@@ -43,7 +44,7 @@ struct ChatMessage: View {
     }
     
     var message: String {
-        "message"
+        "Hello"
     }
     
     var timestamp: Date {
@@ -127,13 +128,102 @@ struct ChatMessage: View {
     }
 }
 
+struct StateEvent: View {
+    
+    let event: EventTimelineItem
+    let stateKey: String
+    let state: OtherState
+    
+    var stateMessage: String {
+        switch state {
+        case .policyRuleRoom:
+            "changed policy rules for room"
+        case .policyRuleServer:
+            "changed policy rules for server"
+        case .policyRuleUser:
+            "changed policy rule for user"
+        case .roomAliases:
+            "changed room aliases"
+        case .roomAvatar(url: _):
+            "changed room avatar"
+        case .roomCanonicalAlias:
+            "changed room canonical alias"
+        case .roomCreate:
+            "created room"
+        case .roomEncryption:
+            "changed room encryption"
+        case .roomGuestAccess:
+            "changed room guest access"
+        case .roomHistoryVisibility:
+            "change room history visibility"
+        case .roomJoinRules:
+            "changed room join rules"
+        case .roomName(name: let name):
+            "changed room name to '\(name ?? "empty")'"
+        case .roomPinnedEvents(change: _):
+            "changed room pinned events"
+        case .roomPowerLevels(users: _, previous: _):
+            "changed room power levels"
+        case .roomServerAcl:
+            "changed room server acl"
+        case .roomThirdPartyInvite(displayName: _):
+            "changed room third party invite"
+        case .roomTombstone:
+            "room tombstone"
+        case .roomTopic(topic: let topic):
+            "changed room topic to '\(topic ?? "none")'"
+        case .spaceChild:
+            "changed space child"
+        case .spaceParent:
+            "changed space parent"
+        case .custom(eventType: let eventType):
+            "changed custom state '\(eventType)'"
+        }
+    }
+    
+    var body: some View {
+        HStack {
+            (Text(event.sender).bold() + Text(" changed " + stateMessage))
+                .italic()
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+    }
+}
+
+struct GenericEvent: View {
+    let name: String
+    
+    var body: some View {
+        Text(name)
+            .frame(maxWidth: .infinity)
+    }
+}
+
 struct TimelineItemView: View {
     
     let item: TimelineItem
     
     var body: some View {
         if let event = item.asEvent() {
-            ChatMessage(event: event)
+            switch event.content {
+            case .msgLike(content: let content):
+                ChatMessage(event: event, msg: content)
+            case .callInvite:
+                GenericEvent(name: "Call invite")
+            case .rtcNotification:
+                GenericEvent(name: "Rtc notification")
+            case .roomMembership(userId: _, userDisplayName: _, change: _, reason: _):
+                GenericEvent(name: "Room membership")
+            case .profileChange(displayName: _, prevDisplayName: _, avatarUrl: _, prevAvatarUrl: _):
+                GenericEvent(name: "Profile change")
+            case let .state(stateKey: stateKey, content: content):
+                StateEvent(event: event, stateKey: stateKey, state: content)
+            case .failedToParseMessageLike(eventType: _, error: let error):
+                GenericEvent(name: "Failed to parse message like: \(error)")
+            case .failedToParseState(eventType: _, stateKey: _, error: let error):
+                GenericEvent(name: "Failed to parse state: \(error)")
+            }
         }
     }
 }
