@@ -1,18 +1,22 @@
 import SwiftUI
+import MatrixRustSDK
 
 struct SidebarChannelView: View {
-    let channels = ["First Channel", "Second Channel", "Third Channel"]
-    @State private var selectedChannel: String = "First Channel"
+    @Environment(AppState.self) var appState
+    
+    @State private var selectedChannel: String? = nil
+    
+    var rooms: [Room] { appState.matrixClient?.rooms ?? [] }
     
     var body: some View {
-        List(channels, id: \.self, selection: $selectedChannel) { channel in
+        List(rooms, selection: $selectedChannel) { channel in
             HStack(alignment: .center) {
                 RoomIcon()
                     .frame(width: 32, height: 32)
 
                 VStack(alignment: .leading) {
                     Spacer()
-                    Text(channel)
+                    Text(channel.displayName() ?? "Unknown Room")
                     Spacer()
                     Divider()
                 }

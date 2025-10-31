@@ -52,46 +52,77 @@ struct ChatMessage: View {
     @State private var hoverText: Bool = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 0) {
                 HStack(spacing: 0) {
-                    Circle()
-                        .frame(width: 32, height: 32)
+                    HStack(spacing: 0) {
+                        Circle()
+                            .frame(width: 32, height: 32)
+                        
+                    }.frame(width: 64)
                     
-                }.frame(width: 64)
+                    Text(name)
+                        .fontWeight(.bold)
+                    Spacer()
+                }
                 
-                Text(name)
-                    .fontWeight(.bold)
-                Spacer()
+                HStack(alignment: .top, spacing: 0) {
+                    HStack {
+                        Text(timeFormat.string(from: timestamp))
+                            .foregroundStyle(.gray)
+                            .font(.system(.footnote))
+                            .padding(.trailing, 5)
+                            .padding(.top, 3)
+                    }
+                    .frame(width: 64 - 10)
+                    .opacity(hoverText ? 1 : 0)
+                    Text(message).textSelection(.enabled)
+                    Spacer()
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.tertiary)
+                        .opacity(hoverText ? 1 : 0)
+                )
+                .padding(.horizontal, 10)
             }
             
-            HStack(alignment: .top, spacing: 0) {
-                HStack {
-                    Text(timeFormat.string(from: timestamp))
-                        .foregroundStyle(.gray)
-                        .font(.system(.footnote))
-                        .padding(.trailing, 5)
-                        .padding(.top, 3)
-                }
-                .frame(width: 64 - 10)
-                .opacity(hoverText ? 1 : 0)
-                Text(message).textSelection(.enabled)
-                Spacer()
-            }.onHover { hover in
-                hoverText = hover
+            HStack {
+                Button(action: {}) {
+                    Image(systemName: "face.smiling")
+                }.buttonStyle(.plain)
+                
+                Button(action: {}) {
+                    Image(systemName: "arrowshape.turn.up.left")
+                }.buttonStyle(.plain)
+                
+                Button(action: {}) {
+                    Image(systemName: "ellipsis.message")
+                }.buttonStyle(.plain)
             }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.gray.tertiary)
-                    .opacity(hoverText ? 1 : 0)
+                    .fill(Color(NSColor.controlBackgroundColor))
+                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    .shadow(color: .black.opacity(0.1), radius: 4)
             )
-            .padding(.horizontal, 10)
+            .padding(.trailing, 20)
+            .padding(.top, 18)
+            .opacity(hoverText ? 1 : 0)
             
-        }.padding(.top, 5)
+        }
+        .padding(.top, 5)
+        .onHover { hover in
+            hoverText = hover
+        }
     }
 }
 
 struct ChatView: View {
+    @Environment(AppState.self) private var appState
+    
     var body: some View {
         VStack(spacing: 0) {
             ScrollView([.vertical]) {

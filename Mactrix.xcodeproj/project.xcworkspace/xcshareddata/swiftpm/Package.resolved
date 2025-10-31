@@ -1,0 +1,24 @@
+{
+  "originHash" : "d50dc159ea20ee71d1cbd24393c3f48a500ec817e7d8b9b27744c87fb3bae766",
+  "pins" : [
+    {
+      "identity" : "keychainaccess",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kishikawakatsumi/KeychainAccess",
+      "state" : {
+        "branch" : "master",
+        "revision" : "e0c7eebc5a4465a3c4680764f26b7a61f567cdaf"
+      }
+    },
+    {
+      "identity" : "matrix-rust-components-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/matrix-org/matrix-rust-components-swift",
+      "state" : {
+        "revision" : "810a35af8ed193d0b93443ef110ccf159cd169f4",
+        "version" : "25.10.27"
+      }
+    }
+  ],
+  "version" : 3
+}
