@@ -29,7 +29,7 @@ struct SidebarChannelView: View {
             }
         }
         .listStyle(.sidebar)
-        .padding(.top, 10)
+        //.safeAreaPadding(.top, 10)
         //.background()
     }
 }

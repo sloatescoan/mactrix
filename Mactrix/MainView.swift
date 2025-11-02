@@ -65,9 +65,7 @@ struct MainView: View {
     
     func onMatrixLoaded(matrixClient: MatrixClient) {
         Task {
-            print("Matrix sync starting")
             try await matrixClient.startSync()
-            print("Matrix sync done")
         }
     }
 }

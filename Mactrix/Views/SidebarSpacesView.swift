@@ -74,7 +74,7 @@ struct SidebarSpacesView: View {
                 .listRowBackground(bgColor)
         }
         .listStyle(.plain)
-        .padding(.top, 6)
+        .safeAreaPadding(.top, 6)
         .frame(width: 56)
         .scrollContentBackground(.hidden)
         .background(bgColor)
