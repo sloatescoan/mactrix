@@ -1,11 +1,11 @@
 import SwiftUI
 import Models
 
-public struct RoomInspectorView: View {
-    let room: Room
+public struct RoomInspectorView<R: Room>: View {
+    let room: R
     @Binding var inspectorVisible: Bool
     
-    public init(room: Room, inspectorVisible: Binding<Bool>) {
+    public init(room: R, inspectorVisible: Binding<Bool>) {
         self.room = room
         self._inspectorVisible = inspectorVisible
     }

@@ -9,7 +9,7 @@ import MatrixRustSDK
     public private(set) var timelineItems: [TimelineItem] = []
     public private(set) var paginating: RoomPaginationStatus = .idle(hitTimelineStart: false)
     
-    public init(room: Room) async throws {
+    public init(room: MatrixRustSDK.Room) async throws {
         timeline = try await room.timeline()
         
         // Listen to timeline item updates.

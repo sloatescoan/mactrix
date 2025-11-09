@@ -7,10 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3409F4EA2EBFD8D4009537B4 /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 3409F4E92EBFD8D4009537B4 /* Models */; };
 		3409F4EC2EBFD8D4009537B4 /* UI in Frameworks */ = {isa = PBXBuildFile; productRef = 3409F4EB2EBFD8D4009537B4 /* UI */; };
-		342C624E2EB4DDE600E2426A /* MatrixRustSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 342C624D2EB4DDE600E2426A /* MatrixRustSDK */; };
-		348DD4BE2EBFE03200B6345E /* Matrix in Frameworks */ = {isa = PBXBuildFile; productRef = 348DD4BD2EBFE03200B6345E /* Matrix */; };
+		34913F6E2EC0F532003034CB /* MatrixRustSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 34913F6D2EC0F532003034CB /* MatrixRustSDK */; };
+		34913F702EC0F59F003034CB /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 34913F6F2EC0F59F003034CB /* Models */; };
 		34F7225F2EB531F40007B2A4 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 34F7225E2EB531F40007B2A4 /* KeychainAccess */; };
 /* End PBXBuildFile section */
 
@@ -32,11 +31,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				348DD4BE2EBFE03200B6345E /* Matrix in Frameworks */,
 				3409F4EC2EBFD8D4009537B4 /* UI in Frameworks */,
-				3409F4EA2EBFD8D4009537B4 /* Models in Frameworks */,
+				34913F6E2EC0F532003034CB /* MatrixRustSDK in Frameworks */,
+				34913F702EC0F59F003034CB /* Models in Frameworks */,
 				34F7225F2EB531F40007B2A4 /* KeychainAccess in Frameworks */,
-				342C624E2EB4DDE600E2426A /* MatrixRustSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,11 +86,10 @@
 			);
 			name = Mactrix;
 			packageProductDependencies = (
-				342C624D2EB4DDE600E2426A /* MatrixRustSDK */,
 				34F7225E2EB531F40007B2A4 /* KeychainAccess */,
-				3409F4E92EBFD8D4009537B4 /* Models */,
 				3409F4EB2EBFD8D4009537B4 /* UI */,
-				348DD4BD2EBFE03200B6345E /* Matrix */,
+				34913F6D2EC0F532003034CB /* MatrixRustSDK */,
+				34913F6F2EC0F59F003034CB /* Models */,
 			);
 			productName = Mactrix;
 			productReference = 343858422EB394590010922A /* Mactrix.app */;
@@ -412,22 +409,18 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3409F4E92EBFD8D4009537B4 /* Models */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Models;
-		};
 		3409F4EB2EBFD8D4009537B4 /* UI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UI;
 		};
-		342C624D2EB4DDE600E2426A /* MatrixRustSDK */ = {
+		34913F6D2EC0F532003034CB /* MatrixRustSDK */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 342C624C2EB4DDE600E2426A /* XCRemoteSwiftPackageReference "matrix-rust-components-swift" */;
 			productName = MatrixRustSDK;
 		};
-		348DD4BD2EBFE03200B6345E /* Matrix */ = {
+		34913F6F2EC0F59F003034CB /* Models */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = Matrix;
+			productName = Models;
 		};
 		34F7225E2EB531F40007B2A4 /* KeychainAccess */ = {
 			isa = XCSwiftPackageProductDependency;

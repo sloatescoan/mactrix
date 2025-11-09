@@ -1,6 +1,7 @@
 import SwiftUI
 import MatrixRustSDK
-import Matrix
+import Models
+import UI
 
 struct TimelineItemView: View {
     
@@ -35,7 +36,7 @@ struct TimelineItemView: View {
 struct ChatView: View {
     @Environment(AppState.self) private var appState
     
-    let room: Room
+    let room: MatrixRustSDK.Room
     @State private var timeline: LiveTimeline? = nil
     
     @State private var errorMessage: String? = nil
@@ -59,7 +60,7 @@ struct ChatView: View {
                                         .id(item.id)
                                 }
                                 if let virtual = item.asVirtual() {
-                                    VirtualItemView(item: virtual)
+                                    UI.VirtualItemView(item: virtual.asModel)
                                         .id(item.id)
                                 }
                             }

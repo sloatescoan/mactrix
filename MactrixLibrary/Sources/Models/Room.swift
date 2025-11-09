@@ -1,5 +1,5 @@
 
-public protocol Room {
+public protocol Room: Hashable {
     var displayName: String? { get }
     var topic: String? { get }
     var encryptionState: EncryptionState { get }
