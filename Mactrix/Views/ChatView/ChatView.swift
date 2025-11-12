@@ -5,18 +5,19 @@ import UI
 
 struct TimelineItemView: View {
     
+    let timeline: Timeline?
     let event: MatrixRustSDK.EventTimelineItem
     
     var body: some View {
         switch event.content {
         case .msgLike(content: let content):
-            ChatMessageView(event: event, msg: content)
+            ChatMessageView(timeline: timeline, event: event, msg: content)
         case .callInvite:
             UI.GenericEventView(event: event, name: "Call invite")
         case .rtcNotification:
             UI.GenericEventView(event: event, name: "Rtc notification")
         case .roomMembership(userId: _, userDisplayName: _, change: _, reason: _):
-            UI.GenericEventView(event: event, name: "Room membership")
+            UI.GenericEventView(event: event, name: "Room membership change")
         case .profileChange(displayName: _, prevDisplayName: _, avatarUrl: _, prevAvatarUrl: _):
             UI.GenericEventView(event: event, name: "Profile change")
         case let .state(stateKey: stateKey, content: content):
@@ -30,7 +31,7 @@ struct TimelineItemView: View {
 }
 
 #Preview {
-    TimelineItemView(event: .previewTextItem)
+    TimelineItemView(timeline: nil, event: .previewTextItem)
 }
 
 struct ChatView: View {
@@ -44,6 +45,7 @@ struct ChatView: View {
     @State private var scrollPosition: String? = nil
     
     func loadMoreMessages() {
+        guard self.timeline?.paginating == .idle(hitTimelineStart: false) else { return }
         print("Reached top, fetching more messages...")
         Task {
             try await self.timeline?.fetchOlderMessages()
@@ -56,7 +58,7 @@ struct ChatView: View {
                     LazyVStack {
                             ForEach(timelineItems) { item in
                                 if let event = item.asEvent() {
-                                    TimelineItemView(event: event)
+                                    TimelineItemView(timeline: timeline?.timeline, event: event)
                                         .id(item.id)
                                 }
                                 if let virtual = item.asVirtual() {

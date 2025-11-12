@@ -8,6 +8,7 @@ import MatrixRustSDK
     
     public private(set) var timelineItems: [TimelineItem] = []
     public private(set) var paginating: RoomPaginationStatus = .idle(hitTimelineStart: false)
+    public private(set) var hitTimelineStart: Bool = false
     
     public init(room: MatrixRustSDK.Room) async throws {
         timeline = try await room.timeline()
@@ -22,7 +23,7 @@ import MatrixRustSDK
     public func fetchOlderMessages() async throws {
         guard paginating == .idle(hitTimelineStart: false) else { return }
         
-        let _ = try await timeline.paginateBackwards(numEvents: 20)
+        let _ = try await timeline.paginateBackwards(numEvents: 100)
     }
 }
 

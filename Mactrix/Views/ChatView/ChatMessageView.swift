@@ -3,8 +3,8 @@ import Models
 import UI
 import MatrixRustSDK
 
-struct ChatMessageView: View {
-    
+struct ChatMessageView: View, UI.MessageEventActions {
+    let timeline: MatrixRustSDK.Timeline?
     let event: MatrixRustSDK.EventTimelineItem
     let msg: MsgLikeContent
     
@@ -13,6 +13,23 @@ struct ChatMessageView: View {
             return displayName
         }
         return event.sender
+    }
+    
+    func toggleReaction(key: String) {
+        Task {
+            let _ = try await timeline?.toggleReaction(itemId: event.eventOrTransactionId, key: key)
+        }
+    }
+    
+    func reply() {}
+    
+    func replyInThread() {}
+    
+    func pin() {
+        guard case let .eventId(eventId: eventId) = event.eventOrTransactionId else { return }
+        Task {
+            try await timeline?.pinEvent(eventId: eventId)
+        }
     }
     
     @ViewBuilder
@@ -61,7 +78,7 @@ struct ChatMessageView: View {
     }
     
     var body: some View {
-        UI.MessageEventView(event: event, reactions: msg.reactions) {
+        UI.MessageEventView(event: event, reactions: msg.reactions, actions: self) {
             message
         }
     }

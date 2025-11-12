@@ -8,12 +8,23 @@ public struct VirtualItemView: View {
         self.item = item
     }
     
+    func formatDate(_ date: Date) -> String {
+        let dayInSecs: Double = 60 * 60 * 24
+        if Date.now.timeIntervalSince(date).isLess(than: dayInSecs) {
+            return String(localized: "Today")
+        } else if Date.now.timeIntervalSince(date).isLess(than: dayInSecs*2) {
+            return String(localized: "Yesterday")
+        } else {
+            return date.formatted(date: .long, time: .omitted)
+        }
+    }
+    
     public var body: some View {
         switch item {
         case .dateDivider(let date):
             Divider()
                 .overlay {
-                    Text(date.formatted(date: .long, time: .shortened))
+                    Text(formatDate(date))
                         .padding(.horizontal, 10)
                         .background(Color(NSColor.controlBackgroundColor))
                 }

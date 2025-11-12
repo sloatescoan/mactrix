@@ -1,19 +1,20 @@
 import SwiftUI
 import Models
 
-struct HoverButton: View {
+struct HoverButton<Icon: View>: View {
     
     @State private var hovering = false
     
-    let icon: String
+    @ViewBuilder
+    let icon: () -> Icon
     let tooltip: LocalizedStringKey
     let action: () -> Void
     
-    let size: CGFloat = 20.0
+    let size: CGFloat = 24.0
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: icon)
+            icon()
         }
         .buttonStyle(.plain)
         .help(tooltip)
@@ -32,15 +33,24 @@ struct HoverButton: View {
     }
 }
 
+public protocol MessageEventActions {
+    func toggleReaction(key: String)
+    func reply()
+    func replyInThread()
+    func pin()
+}
+
 public struct MessageEventView<MessageView: View, EventTimelineItem: Models.EventTimelineItem, Reaction: Models.Reaction>: View {
     
     let event: EventTimelineItem
     let reactions: [Reaction]
     let message: MessageView
+    let actions: MessageEventActions
     
-    public init(event: EventTimelineItem, reactions: [Reaction], @ViewBuilder message: () -> MessageView) {
+    public init(event: EventTimelineItem, reactions: [Reaction], actions: MessageEventActions, @ViewBuilder message: () -> MessageView) {
         self.event = event
         self.reactions = reactions
+        self.actions = actions
         self.message = message()
     }
     
@@ -62,10 +72,20 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
     @ViewBuilder
     var hoverActions: some View {
         HStack(spacing: 0) {
-            HoverButton(icon: "face.smiling", tooltip: "React") {}
-            HoverButton(icon: "arrowshape.turn.up.left", tooltip: "Reply") {}
-            HoverButton(icon: "ellipsis.message", tooltip: "Reply in thread") {}
-            HoverButton(icon: "pin", tooltip: "Pin") {}
+            HoverButton(icon: { Text("👍") }, tooltip: "React") {
+                actions.toggleReaction(key: "👍")
+            }
+            HoverButton(icon: { Text("🎉") }, tooltip: "React") {
+                actions.toggleReaction(key: "🎉")
+            }
+            HoverButton(icon: { Text("❤️") }, tooltip: "React") {
+                actions.toggleReaction(key: "❤️")
+            }
+            Divider().frame(height: 18)
+            HoverButton(icon: { Image(systemName: "face.smiling") }, tooltip: "React") {}
+            HoverButton(icon: { Image(systemName: "arrowshape.turn.up.left") }, tooltip: "Reply") {}
+            HoverButton(icon: { Image(systemName: "ellipsis.message") }, tooltip: "Reply in thread") {}
+            HoverButton(icon: { Image(systemName: "pin") }, tooltip: "Pin") {}
         }
         .padding(2)
         .background(
@@ -77,6 +97,10 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
         .padding(.trailing, 20)
         .padding(.top, 8)
         .opacity(hoverText ? 1 : 0)
+    }
+    
+    func reactionIsActive(_ reaction: Reaction) -> Bool {
+        return event.isOwn && reaction.senders.contains(where: { $0.senderId == event.sender })
     }
     
     public var body: some View {
@@ -120,7 +144,13 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
                 HStack {
                     Spacer().frame(width: 64)
                     ForEach(reactions) { reaction in
-                        MessageReactionView(reaction: reaction)
+                        MessageReactionView(
+                            reaction: reaction,
+                            active: Binding(
+                                get: { reactionIsActive(reaction) },
+                                set: { if $0 != reactionIsActive(reaction) { actions.toggleReaction(key: reaction.key) } }
+                            )
+                        )
                     }
                     Spacer()
                 }
@@ -136,8 +166,15 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
     }
 }
 
+public struct MockMessageEventActions: MessageEventActions {
+    public func toggleReaction(key: String) {}
+    public func reply() {}
+    public func replyInThread() {}
+    public func pin() {}
+}
+
 #Preview {
-    MessageEventView(event: MockEventTimelineItem(), reactions: [MockReaction()]) {
+    MessageEventView(event: MockEventTimelineItem(), reactions: [MockReaction()], actions: MockMessageEventActions()) {
         Text("This is the body of the message")
     }
     .padding(.vertical)
