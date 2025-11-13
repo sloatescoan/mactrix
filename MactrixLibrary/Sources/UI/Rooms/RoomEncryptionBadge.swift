@@ -19,9 +19,9 @@ public struct RoomEncryptionBadge: View {
         case .encrypted:
             return Badge(label: "Encrypted", icon: "lock.fill", color: .green)
         case .notEncrypted:
-            return Badge(label: "Not encrypted", icon: "lock.open.fill", color: .gray)
+            return Badge(label: "Not encrypted", icon: "lock.open.fill", color: .blue)
         case .unknown:
-            return Badge(label: "Unknown", icon: "questionmark", color: .gray)
+            return Badge(label: "Encryption unknown", icon: "questionmark", color: .gray)
         }
     }
     
@@ -33,7 +33,7 @@ public struct RoomEncryptionBadge: View {
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(badge.color.quaternary)
-                    .stroke(badge.color)
+                    //.stroke(badge.color.secondary)
             )
             .padding()
     }

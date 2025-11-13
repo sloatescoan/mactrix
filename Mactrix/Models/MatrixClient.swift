@@ -3,6 +3,7 @@ import MatrixRustSDK
 import KeychainAccess
 import AuthenticationServices
 import SwiftUI
+import UI
 
 struct UserSession: Codable {
     let accessToken: String
@@ -106,11 +107,18 @@ struct HomeserverLogin {
     let storeID: String
     let client: ClientProtocol
     
-    var rooms: [Room] = []
+    var rooms: [SidebarRoom] = []
+    
+    var selectedRoom: LiveRoom? = nil
+    
+    private var clientDelegateHandle: TaskHandle? = nil
+    var authenticationFailed: Bool = false
     
     init(storeID: String, client: ClientProtocol) {
         self.storeID = storeID
         self.client = client
+        
+        clientDelegateHandle = try? self.client.setDelegate(delegate: self)
     }
     
     static var previewMock: MatrixClient {
@@ -138,32 +146,6 @@ struct HomeserverLogin {
         return HomeserverLogin(storeID: storeID, unauthenticatedClient: client, loginDetails: details)
     }
     
-    /*static func login(homeServer: String, username: String, password: String) async throws -> MatrixClient {
-        let storeID = UUID().uuidString
-        
-        // Create a client for a particular homeserver.
-        // Note that we can pass a server name (the second part of a Matrix user ID) instead of the direct URL.
-        // This allows the SDK to discover the homeserver's well-known configuration for Sliding Sync support.
-        let client = try await ClientBuilder()
-            .serverNameOrHomeserverUrl(serverNameOrUrl: homeServer)
-            .sessionPaths(dataPath: URL.sessionData(for: storeID).path(percentEncoded: false),
-                          cachePath: URL.sessionCaches(for: storeID).path(percentEncoded: false))
-            .slidingSyncVersionBuilder(versionBuilder: .discoverNative)
-            .build()
-        
-        
-        
-        // Login using password authentication.
-        try await client.login(username: username, password: password, initialDeviceName: "Mactrix", deviceId: nil)
-        
-        let matrixClient = MatrixClient(storeID: storeID, client: client)
-        
-        let userSession = try matrixClient.userSession()
-        try userSession.saveUserToKeychain()
-        
-        return matrixClient
-    }*/
-    
     static func attemptRestore() async throws -> MatrixClient? {
         guard let userSession = try UserSession.loadUserFromKeychain() else { return nil }
         
@@ -177,10 +159,12 @@ struct HomeserverLogin {
             .homeserverUrl(url: session.homeserverUrl)
             .build()
         
-        // Restore the client using the session.
-        try await client.restoreSession(session: session)
+        let matrixClient = MatrixClient(storeID: storeID, client: client)
         
-        return MatrixClient(storeID: storeID, client: client)
+        // Restore the client using the session.
+        try await matrixClient.client.restoreSession(session: session)
+        
+        return matrixClient
     }
     
     func reset() async throws {
@@ -208,6 +192,23 @@ struct HomeserverLogin {
     
     func clearCache() async throws {
         try await self.client.clearCaches(syncService: syncService)
+    }
+}
+
+extension MatrixClient: MatrixRustSDK.ClientDelegate {
+    func didReceiveAuthError(isSoftLogout: Bool) {
+        
+        print("did receive auth error: soft logout \(isSoftLogout)")
+        if !isSoftLogout {
+            self.authenticationFailed = true
+        }
+    }
+}
+
+extension MatrixClient: UI.ImageLoader {
+    func loadImage(matrixUrl: String) async throws -> Image? {
+        let imageData = try await self.client.getMediaContent(mediaSource: .fromUrl(url: matrixUrl))
+        return try await Image(importing: imageData, contentType: nil)
     }
 }
 

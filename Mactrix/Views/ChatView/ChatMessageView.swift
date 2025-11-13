@@ -4,6 +4,8 @@ import UI
 import MatrixRustSDK
 
 struct ChatMessageView: View, UI.MessageEventActions {
+    @Environment(AppState.self) private var appState
+    
     let timeline: MatrixRustSDK.Timeline?
     let event: MatrixRustSDK.EventTimelineItem
     let msg: MsgLikeContent
@@ -17,7 +19,11 @@ struct ChatMessageView: View, UI.MessageEventActions {
     
     func toggleReaction(key: String) {
         Task {
-            let _ = try await timeline?.toggleReaction(itemId: event.eventOrTransactionId, key: key)
+            do {
+                let _ = try await timeline?.toggleReaction(itemId: event.eventOrTransactionId, key: key)
+            } catch {
+                print("Failed to toggle reaction: \(error)")
+            }
         }
     }
     
@@ -28,7 +34,11 @@ struct ChatMessageView: View, UI.MessageEventActions {
     func pin() {
         guard case let .eventId(eventId: eventId) = event.eventOrTransactionId else { return }
         Task {
-            try await timeline?.pinEvent(eventId: eventId)
+            do {
+                let _ = try await timeline?.pinEvent(eventId: eventId)
+            } catch {
+                print("Failed to ping message: \(error)")
+            }
         }
     }
     
@@ -78,7 +88,7 @@ struct ChatMessageView: View, UI.MessageEventActions {
     }
     
     var body: some View {
-        UI.MessageEventView(event: event, reactions: msg.reactions, actions: self) {
+        UI.MessageEventView(event: event, reactions: msg.reactions, actions: self, imageLoader: appState.matrixClient) {
             message
         }
     }

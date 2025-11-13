@@ -2,20 +2,15 @@ import SwiftUI
 import MatrixRustSDK
 import UI
 
-struct MainView: View {
+struct MainView: View, UI.RoomInspectorActions {
     @Environment(AppState.self) var appState
     
     @State private var showWelcomeSheet: Bool = false
     @State private var inspectorVisible: Bool = false
     @State private var selectedRoomId: String? = nil
     
-    var selectedRoom: Room? {
-        guard let roomId = selectedRoomId else { return nil}
-        return appState.matrixClient?.rooms.first(where: { $0.id() == roomId })
-    }
-    
     @ViewBuilder var details: some View {
-        if let room = selectedRoom {
+        if let room = appState.matrixClient?.selectedRoom {
             ChatView(room: room).id(room.id)
         } else {
             ContentUnavailableView("Select a room", systemImage: "message.fill")
@@ -24,12 +19,12 @@ struct MainView: View {
     
     var body: some View {
         NavigationSplitView(
-            sidebar: { SidebarChannelView(selectedRoomId: $selectedRoomId) },
+            sidebar: { SidebarView(selectedRoomId: $selectedRoomId) },
             detail: { details }
         )
         .inspector(isPresented: $inspectorVisible, content: {
-            if let room = selectedRoom {
-                UI.RoomInspectorView(room: room, inspectorVisible: $inspectorVisible)
+            if let room = appState.matrixClient?.selectedRoom {
+                UI.RoomInspectorView(room: room, members: room.fetchedMembers, inspectorVisible: $inspectorVisible, actions: self)
             } else {
                 Text("No room selected")
             }
@@ -43,6 +38,19 @@ struct MainView: View {
                 showWelcomeSheet = true
             }
         }
+        .onChange(of: selectedRoomId) { oldValue, newValue in
+            if let roomId = selectedRoomId, let selectedRoom = appState.matrixClient?.rooms.first(where: { $0.id() == roomId }) {
+                appState.matrixClient?.selectedRoom = LiveRoom(room: selectedRoom)
+            } else {
+                appState.matrixClient?.selectedRoom = nil
+            }
+        }
+        .onChange(of: appState.matrixClient?.authenticationFailed) { _, authFailed in
+            if authFailed == true {
+                print("Logging out since auth failed")
+                appState.matrixClient = nil
+            }
+        }
     }
     
     func attemptLoadUserSession() async {
@@ -51,7 +59,7 @@ struct MainView: View {
                 appState.matrixClient = matrixClient
             }
         } catch {
-            print(error)
+            print("Failed to restore session: \(error)")
         }
         
         showWelcomeSheet = appState.matrixClient == nil
@@ -75,6 +83,10 @@ struct MainView: View {
                 NSApp.terminate(nil)
             }
         }
+    }
+    
+    func syncMembers() async throws {
+        try await appState.matrixClient?.selectedRoom?.syncMembers()
     }
 }
 

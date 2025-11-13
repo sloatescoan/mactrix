@@ -5,6 +5,13 @@ public enum ProfileDetails {
     case pending
     case ready(displayName: String?, displayNameAmbiguous: Bool, avatarUrl: String?)
     case error(message: String)
+    
+    public var avatarUrl: String? {
+        if case let .ready(displayName: _, displayNameAmbiguous: _, avatarUrl: avatarUrl) = self {
+            return avatarUrl
+        }
+        return nil
+    }
 }
 
 public protocol EventTimelineItem {

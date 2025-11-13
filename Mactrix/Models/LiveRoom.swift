@@ -3,13 +3,13 @@ import MatrixRustSDK
 
 @Observable
 public final class LiveRoom: MatrixRustSDK.Room {
-    var typingHandle: TaskHandle?
+    private var typingHandle: TaskHandle?
     
     public var typingUserIds: [String] = []
+    public var fetchedMembers: [MatrixRustSDK.RoomMember]? = nil
     
-    public init(room: MatrixRustSDK.Room) {
-        super.init(unsafeFromRawPointer: room.uniffiClonePointer())
-        startListening()
+    public convenience init(room: MatrixRustSDK.Room) {
+        self.init(unsafeFromRawPointer: room.uniffiClonePointer())
     }
     
     required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
@@ -19,6 +19,22 @@ public final class LiveRoom: MatrixRustSDK.Room {
     
     func startListening() {
         self.typingHandle = subscribeToTypingNotifications(listener: self)
+    }
+    
+    func syncMembers() async throws {
+        // guard not already synced
+        guard fetchedMembers == nil else { return }
+        
+        print("syncing members for room: \(self.id)")
+        
+        let memberIter = try await self.members()
+        var result = [MatrixRustSDK.RoomMember]()
+        while let memberChunk = memberIter.nextChunk(chunkSize: 1000) {
+            result.append(contentsOf: memberChunk)
+        }
+        fetchedMembers = result
+        
+        print("synced \(fetchedMembers?.count, default: "(unknown)") members")
     }
 }
 

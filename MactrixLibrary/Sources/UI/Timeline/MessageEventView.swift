@@ -46,11 +46,13 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
     let reactions: [Reaction]
     let message: MessageView
     let actions: MessageEventActions
+    let imageLoader: ImageLoader?
     
-    public init(event: EventTimelineItem, reactions: [Reaction], actions: MessageEventActions, @ViewBuilder message: () -> MessageView) {
+    public init(event: EventTimelineItem, reactions: [Reaction], actions: MessageEventActions, imageLoader: ImageLoader?, @ViewBuilder message: () -> MessageView) {
         self.event = event
         self.reactions = reactions
         self.actions = actions
+        self.imageLoader = imageLoader
         self.message = message()
     }
     
@@ -109,9 +111,9 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
                 // Profile icon and name
                 HStack(spacing: 0) {
                     HStack(spacing: 0) {
-                        Circle()
+                        AvatarImage(avatarUrl: event.senderProfileDetails.avatarUrl, imageLoader: imageLoader)
                             .frame(width: 32, height: 32)
-                        
+                            .clipShape(Circle())
                     }.frame(width: 64)
                     
                     Text(name)
@@ -174,7 +176,12 @@ public struct MockMessageEventActions: MessageEventActions {
 }
 
 #Preview {
-    MessageEventView(event: MockEventTimelineItem(), reactions: [MockReaction()], actions: MockMessageEventActions()) {
+    MessageEventView(
+        event: MockEventTimelineItem(),
+        reactions: [MockReaction()],
+        actions: MockMessageEventActions(),
+        imageLoader: nil
+    ) {
         Text("This is the body of the message")
     }
     .padding(.vertical)

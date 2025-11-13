@@ -16,6 +16,31 @@ extension MatrixRustSDK.Room: Models.Room {
     }
 }
 
+extension MatrixRustSDK.RoomMember: @retroactive Identifiable, Models.RoomMember {
+    public var id: String {
+        self.userId
+    }
+    
+    public var roleForPowerLevel: Models.RoomMemberRole {
+        self.suggestedRoleForPowerLevel.asModel
+    }
+}
+
+extension MatrixRustSDK.RoomMemberRole {
+    var asModel: Models.RoomMemberRole {
+        switch self {
+        case .creator:
+            return .creator
+        case .administrator:
+            return .administrator
+        case .moderator:
+            return .moderator
+        case .user:
+            return .user
+        }
+    }
+}
+
 extension MatrixRustSDK.EncryptionState {
     var asModel: Models.EncryptionState {
         switch self {
