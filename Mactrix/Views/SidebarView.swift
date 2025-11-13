@@ -2,59 +2,52 @@ import SwiftUI
 import MatrixRustSDK
 import UI
 
-struct AvatarImage: View {
-    @Environment(AppState.self) private var appState
-    
-    let avatarUrl: String?
-    let placeholder: (() -> AnyView)?
-    
-    init(avatarUrl: String?, placeholder: (() -> AnyView)? = nil) {
-        self.avatarUrl = avatarUrl
-        self.placeholder = placeholder
-    }
-    
-    @State private var avatar: Image? = nil
-    
-    @ViewBuilder
-    var imageOrPlaceholder: some View {
-        if let avatar = avatar {
-            avatar.resizable()
-        } else {
-            if let placeholder = placeholder {
-                placeholder()
-            } else {
-                Rectangle().foregroundStyle(Color.gray)
-            }
-        }
-    }
-    
-    var body: some View {
-        imageOrPlaceholder
-            .aspectRatio(1.0, contentMode: .fit)
-            .task(id: avatarUrl) {
-                guard let avatarUrl = avatarUrl else { return }
-                guard let imageData = try? await appState.matrixClient?.client.getUrl(url: avatarUrl) else { return }
-                avatar = try? await Image(importing: imageData, contentType: nil)
-            }
-    }
-}
-
-struct RoomIcon: View {
+struct SpaceDisclosureGroup: View {
     @Environment(AppState.self) var appState
     
-    let room: Room
-    let placeholderImageName: String
+    @State var space: SidebarSpaceRoom
     
-    init(room: Room, placeholderImageName: String = "number") {
-        self.room = room
-        self.placeholderImageName = placeholderImageName
+    @State private var isExpanded: Bool = false
+    
+    var spaceRow: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            switch space.children {
+            case .loading:
+                ProgressView("Loading rooms")
+            case .loaded(let children):
+                if children.paginationState == .loading {
+                    ProgressView("Loading rooms")
+                } else {
+                    ForEach(children.rooms) { room in
+                        SpaceDisclosureGroup(space: room)
+                    }
+                }
+            case .error(let error):
+                Text("Error: \(error.localizedDescription)")
+                    .foregroundStyle(Color.red)
+                    .textSelection(.enabled)
+            }
+        } label: {
+            roomRow
+        }
+        .task(id: isExpanded) {
+            print("space expanded \(isExpanded) \(space.spaceRoom.id)")
+            if isExpanded {
+                await space.loadChildren()
+            }
+        }
+    }
+    
+    var roomRow: some View {
+        UI.RoomRow(title: space.spaceRoom.displayName, avatarUrl: space.spaceRoom.avatarUrl, imageLoader: appState.matrixClient, placeholderImageName: "network")
     }
     
     var body: some View {
-        UI.AvatarImage(avatarUrl: room.avatarUrl(), imageLoader: appState.matrixClient) {
-            Image(systemName: placeholderImageName)
+        if space.spaceRoom.roomType == .space {
+            spaceRow
+        } else {
+            roomRow
         }
-        .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }
 
@@ -71,9 +64,8 @@ struct SidebarView: View {
             .filter { !$0.isSpace() && $0.roomInfo?.isDirect != true }
     }
     
-    var spaces: [SidebarRoom] {
-        (appState.matrixClient?.rooms ?? [])
-            .filter { $0.isSpace() }
+    var spaces: [SidebarSpaceRoom] {
+        appState.matrixClient?.spaceService.spaceRooms ?? []
     }
     
     @Binding var selectedRoomId: String?
@@ -82,28 +74,19 @@ struct SidebarView: View {
         List(selection: $selectedRoomId) {
             Section("Directs") {
                 ForEach(directs) { room in
-                    Label(
-                        title: { Text(room.displayName() ?? "Unknown Room") },
-                        icon: { RoomIcon(room: room, placeholderImageName: "person.fill") }
-                    ).listItemTint(.gray)
+                    UI.RoomRow(title: room.displayName() ?? "Unknown user", avatarUrl: room.avatarUrl(), imageLoader: appState.matrixClient, placeholderImageName: "person.fill")
                 }
             }
             
             Section("Rooms") {
                 ForEach(rooms) { room in
-                    Label(
-                        title: { Text(room.displayName() ?? "Unknown Room") },
-                        icon: { RoomIcon(room: room) }
-                    ).listItemTint(.gray)
+                    UI.RoomRow(title: room.displayName() ?? "Unknown Room", avatarUrl: room.avatarUrl(), imageLoader: appState.matrixClient)
                 }
             }
             
             Section("Spaces") {
-                ForEach(spaces) { room in
-                    Label(
-                        title: { Text(room.displayName() ?? "Unknown Space") },
-                        icon: { RoomIcon(room: room, placeholderImageName: "network") }
-                    ).listItemTint(.gray)
+                ForEach(spaces) { space in
+                    SpaceDisclosureGroup(space: space)
                 }
             }
         }

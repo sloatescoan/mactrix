@@ -139,3 +139,9 @@ extension MatrixRustSDK.EventTimelineItem: Models.EventTimelineItem {
         timestamp.date
     }
 }
+
+extension MatrixRustSDK.SpaceRoom: @retroactive Identifiable {
+    public var id: String {
+        self.roomId
+    }
+}

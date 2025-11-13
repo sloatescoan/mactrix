@@ -111,12 +111,15 @@ struct HomeserverLogin {
     
     var selectedRoom: LiveRoom? = nil
     
+    let spaceService: LiveSpaceService
+    
     private var clientDelegateHandle: TaskHandle? = nil
     var authenticationFailed: Bool = false
     
     init(storeID: String, client: ClientProtocol) {
         self.storeID = storeID
         self.client = client
+        self.spaceService = LiveSpaceService(spaceService: client.spaceService())
         
         clientDelegateHandle = try? self.client.setDelegate(delegate: self)
     }
