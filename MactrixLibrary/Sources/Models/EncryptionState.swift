@@ -1,4 +1,5 @@
 
+@MainActor
 public enum EncryptionState {
     /**
      * The room is encrypted.

@@ -1,12 +1,13 @@
 import Foundation
 import MatrixRustSDK
+import Models
 
 @Observable
-public final class LiveRoom: MatrixRustSDK.Room {
-    private var typingHandle: TaskHandle?
-    
+public final class LiveRoom: MatrixRustSDK.Room, Models.Room {
     public var typingUserIds: [String] = []
     public var fetchedMembers: [MatrixRustSDK.RoomMember]? = nil
+    
+    private var typingHandle: TaskHandle?
     
     public convenience init(room: MatrixRustSDK.Room) {
         self.init(unsafeFromRawPointer: room.uniffiClonePointer())
@@ -17,11 +18,12 @@ public final class LiveRoom: MatrixRustSDK.Room {
         startListening()
     }
     
-    func startListening() {
+    private func startListening() {
         self.typingHandle = subscribeToTypingNotifications(listener: self)
     }
     
-    func syncMembers() async throws {
+    
+    public func syncMembers() async throws {
         // guard not already synced
         guard fetchedMembers == nil else { return }
         
@@ -35,6 +37,18 @@ public final class LiveRoom: MatrixRustSDK.Room {
         fetchedMembers = result
         
         print("synced \(fetchedMembers?.count, default: "(unknown)") members")
+    }
+    
+    public var displayName: String? {
+        self.displayName()
+    }
+    
+    public var topic: String? {
+        self.topic()
+    }
+    
+    public var encryptionState: Models.EncryptionState {
+        self.encryptionState().asModel
     }
 }
 

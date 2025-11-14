@@ -2,7 +2,7 @@ import Foundation
 import MatrixRustSDK
 import Models
 
-extension MatrixRustSDK.Room: Models.Room {
+/*extension MatrixRustSDK.Room: Models.Room {
     public var displayName: String? {
         self.displayName()
     }
@@ -14,7 +14,7 @@ extension MatrixRustSDK.Room: Models.Room {
     public var encryptionState: Models.EncryptionState {
         self.encryptionState().asModel
     }
-}
+}*/
 
 extension MatrixRustSDK.RoomMember: @retroactive Identifiable, Models.RoomMember {
     public var id: String {

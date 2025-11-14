@@ -16,11 +16,14 @@ struct MactrixApp: App {
     
     
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             MainView()
         }
         .windowToolbarStyle(.unifiedCompact)
         .environment(appState)
+        .commands {
+            AppCommands()
+        }
         
         Settings {
             SettingsView()

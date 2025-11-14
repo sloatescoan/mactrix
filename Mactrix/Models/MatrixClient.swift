@@ -114,8 +114,6 @@ enum SelectedRoom {
     
     var rooms: [SidebarRoom] = []
     
-    var selectedRoom: SelectedRoom? = nil
-    
     let spaceService: LiveSpaceService
     
     private var clientDelegateHandle: TaskHandle? = nil

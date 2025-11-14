@@ -9,27 +9,16 @@ struct RoomInspectorMemberRow<RoomMember: Models.RoomMember>: View {
     }
 }
 
-@MainActor
-public protocol RoomInspectorActions {
-    func syncMembers() async throws
-}
-
-struct MockRoomInspectorActions: RoomInspectorActions {
-    func syncMembers() async throws {}
-}
-
-public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember, Actions: RoomInspectorActions>: View {
+public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember>: View {
     let room: Room
     let members: [RoomMember]?
-    let actions: Actions
     
     @Binding var inspectorVisible: Bool
     
-    public init(room: Room, members: [RoomMember]?, inspectorVisible: Binding<Bool>, actions: Actions) {
+    public init(room: Room, members: [RoomMember]?, inspectorVisible: Binding<Bool>) {
         self.room = room
         self.members = members
         self._inspectorVisible = inspectorVisible
-        self.actions = actions
     }
     
     @ViewBuilder
@@ -79,7 +68,7 @@ public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember
                 usersPlaceholder
                     .task(id: room.id) {
                         do {
-                            try await actions.syncMembers()
+                            try await room.syncMembers()
                         } catch {
                             print("Failed to sync members in inspector: \(error)")
                         }
@@ -100,7 +89,7 @@ public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember
 
 
 #Preview {
-    RoomInspectorView<MockRoom, MockRoomMember, MockRoomInspectorActions>
-        .init(room: MockRoom.previewRoom, members: nil, inspectorVisible: .constant(true), actions: MockRoomInspectorActions())
+    RoomInspectorView<MockRoom, MockRoomMember>
+        .init(room: MockRoom.previewRoom, members: nil, inspectorVisible: .constant(true))
         .frame(width: 250, height: 500)
 }

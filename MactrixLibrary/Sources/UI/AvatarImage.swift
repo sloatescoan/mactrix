@@ -38,7 +38,12 @@ public struct AvatarImage<Preview: View>: View {
             .aspectRatio(1.0, contentMode: .fit)
             .task(id: avatarUrl) {
                 guard let avatarUrl = avatarUrl else { return }
-                avatar = try? await imageLoader?.loadImage(matrixUrl: avatarUrl)
+                
+                do {
+                    avatar = try await imageLoader?.loadImage(matrixUrl: avatarUrl)
+                } catch {
+                    print("failed to load avatar: \(error)")
+                }
             }
     }
 }

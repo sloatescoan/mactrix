@@ -14,7 +14,11 @@ import MatrixRustSDK
     var matrixClient: MatrixClient? = nil
     
     func reset() async throws {
-        try await self.matrixClient?.reset()
+        do {
+            try await self.matrixClient?.reset()
+        } catch {
+            print("Failed to reset matrix client: \(error)")
+        }
         matrixClient = nil
     }
     
