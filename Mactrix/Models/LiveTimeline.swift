@@ -23,7 +23,7 @@ import MatrixRustSDK
     public func fetchOlderMessages() async throws {
         guard paginating == .idle(hitTimelineStart: false) else { return }
         
-        let _ = try await timeline.paginateBackwards(numEvents: 100)
+        let _ = try await timeline.paginateBackwards(numEvents: 200)
     }
 }
 

@@ -7,8 +7,9 @@ struct SpaceDisclosureGroup: View {
     @Environment(WindowState.self) var windowState
     
     @State var space: SidebarSpaceRoom
-    
     @State private var isExpanded: Bool = false
+    
+    @Binding var selectedRoomId: String?
     
     var loadingRooms: some View {
         Label {
@@ -29,7 +30,7 @@ struct SpaceDisclosureGroup: View {
                     loadingRooms
                 } else {
                     ForEach(children.rooms) { room in
-                        SpaceDisclosureGroup(space: room)
+                        SpaceDisclosureGroup(space: room, selectedRoomId: $selectedRoomId)
                     }
                 }
             case .error(let error):
@@ -60,13 +61,33 @@ struct SpaceDisclosureGroup: View {
         return nil
     }
     
+    var joinedRoom: SidebarRoom? {
+        return appState.matrixClient?.rooms.first(where: { $0.id() == space.id })
+    }
+    
+    @ViewBuilder
     var roomRow: some View {
-        UI.RoomRow(
-            title: space.spaceRoom.displayName,
-            avatarUrl: space.spaceRoom.avatarUrl,
-            imageLoader: appState.matrixClient,
-            joinRoom: joinRoom,
-            placeholderImageName: "network")
+        if let joinedRoom {
+            UI.RoomRow(
+                title: space.spaceRoom.displayName,
+                avatarUrl: space.spaceRoom.avatarUrl,
+                imageLoader: appState.matrixClient,
+                joinRoom: nil,
+                placeholderImageName: "network"
+            )
+            .contextMenu {
+                RoomContextMenu(room: joinedRoom, selectedRoomId: $selectedRoomId)
+            }
+        } else {
+            UI.RoomRow(
+                title: space.spaceRoom.displayName,
+                avatarUrl: space.spaceRoom.avatarUrl,
+                imageLoader: appState.matrixClient,
+                joinRoom: joinRoom,
+                placeholderImageName: "network"
+            )
+        }
+        
     }
     
     var body: some View {
@@ -74,6 +95,31 @@ struct SpaceDisclosureGroup: View {
             spaceRow
         } else {
             roomRow
+        }
+    }
+}
+
+struct RoomContextMenu: View {
+    let room: SidebarRoom
+    @Binding var selectedRoomId: String?
+    
+    var body: some View {
+        Button {
+            Task {
+                do {
+                    print("leaving room: \(room.id())")
+                    try await room.leave()
+                    try await room.forget()
+                    
+                    if selectedRoomId == room.id() {
+                        selectedRoomId = nil
+                    }
+                } catch {
+                    print("failed to leave room: \(error)")
+                }
+            }
+        } label: {
+            Label("Leave room", systemImage: "minus.circle")
         }
     }
 }
@@ -111,6 +157,9 @@ struct SidebarView: View {
                         joinRoom: nil,
                         placeholderImageName: "person.fill"
                     )
+                    .contextMenu {
+                        RoomContextMenu(room: room, selectedRoomId: $selectedRoomId)
+                    }
                 }
             }
             
@@ -123,30 +172,14 @@ struct SidebarView: View {
                         joinRoom: nil
                     )
                     .contextMenu {
-                        Button {
-                            Task {
-                                do {
-                                    print("leaving room: \(room.id())")
-                                    try await room.leave()
-                                    try await room.forget()
-                                    
-                                    if selectedRoomId == room.id() {
-                                        selectedRoomId = nil
-                                    }
-                                } catch {
-                                    print("failed to leave room: \(error)")
-                                }
-                            }
-                        } label: {
-                            Label("Leave room", systemImage: "minus.circle")
-                        }
+                        RoomContextMenu(room: room, selectedRoomId: $selectedRoomId)
                     }
                 }
             }
             
             Section("Spaces") {
                 ForEach(spaces) { space in
-                    SpaceDisclosureGroup(space: space)
+                    SpaceDisclosureGroup(space: space, selectedRoomId: $selectedRoomId)
                 }
             }
         }

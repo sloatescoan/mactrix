@@ -29,6 +29,7 @@ public struct VirtualItemView: View {
                         .background(Color(NSColor.controlBackgroundColor))
                 }
                 .frame(height: 40)
+                .padding(.horizontal, 10)
         case .readMarker:
             Divider()
                 .overlay {
@@ -38,6 +39,8 @@ public struct VirtualItemView: View {
                         .background(Color(NSColor.controlBackgroundColor))
                 }
                 .frame(height: 40)
+                .padding(.horizontal, 10)
+                .foregroundStyle(.red.mix(with: .black, by: 0.1))
         case .timelineStart:
             Divider()
                 .overlay {
@@ -47,6 +50,7 @@ public struct VirtualItemView: View {
                         .background(Color(NSColor.controlBackgroundColor))
                 }
                 .frame(height: 40)
+                .padding(.horizontal, 10)
         }
     }
 }
@@ -57,7 +61,6 @@ public struct VirtualItemView: View {
         VirtualItemView(item: .dateDivider(date: Date()))
         VirtualItemView(item: .readMarker)
     }
-    .padding(40)
     .frame(width: 400)
     .background(Color(NSColor.controlBackgroundColor))
 }

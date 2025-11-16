@@ -60,6 +60,7 @@ public struct RoomRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4))
             }
         )
+        .help(title)
     }
     
     public var body: some View {

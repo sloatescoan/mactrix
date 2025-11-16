@@ -40,6 +40,29 @@ public protocol MessageEventActions {
     func pin()
 }
 
+struct MessageTimestampView: View {
+    let date: Date
+    let hover: Bool
+    
+    var timeFormat: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }
+    
+    var body: some View {
+        HStack {
+            Text(timeFormat.string(from: date))
+                .foregroundStyle(.gray)
+                .font(.system(.footnote))
+                .padding(.trailing, 5)
+                .padding(.top, 3)
+        }
+        .frame(width: 64 - 10)
+        //.opacity(hover ? 1 : 0)
+    }
+}
+
 public struct MessageEventView<MessageView: View, EventTimelineItem: Models.EventTimelineItem, Reaction: Models.Reaction>: View {
     
     let event: EventTimelineItem
@@ -61,12 +84,6 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
             return displayName
         }
         return event.sender
-    }
-    
-    var timeFormat: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter
     }
     
     @State private var hoverText: Bool = false
@@ -123,15 +140,7 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
                 
                 // Main body
                 HStack(alignment: .top, spacing: 0) {
-                    HStack {
-                        Text(timeFormat.string(from: event.date))
-                            .foregroundStyle(.gray)
-                            .font(.system(.footnote))
-                            .padding(.trailing, 5)
-                            .padding(.top, 3)
-                    }
-                    .frame(width: 64 - 10)
-                    .opacity(hoverText ? 1 : 0)
+                    MessageTimestampView(date: event.date, hover: hoverText)
                     message
                     Spacer()
                 }

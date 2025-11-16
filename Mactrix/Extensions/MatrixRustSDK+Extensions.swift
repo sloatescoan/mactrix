@@ -56,13 +56,17 @@ extension MatrixRustSDK.Room: @retroactive Identifiable {
     }
 }
 
-extension MatrixRustSDK.TimelineItem: @retroactive Equatable, @retroactive Identifiable {
+extension MatrixRustSDK.TimelineItem: @retroactive Hashable, @retroactive Identifiable {
     public var id: String {
         self.uniqueId().id
     }
     
     public static func == (lhs: MatrixRustSDK.TimelineItem, rhs: MatrixRustSDK.TimelineItem) -> Bool {
         return lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.id)
     }
 }
 

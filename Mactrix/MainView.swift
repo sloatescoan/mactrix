@@ -21,6 +21,9 @@ struct MainView: View {
             ChatView(room: room).id(room.id)
         case .previewRoom(let room):
             Text("Room Preview: \(room.info().name ?? "unknown name")")
+            if let topic = room.info().topic {
+                Text("Topic: \(topic)")
+            }
         case .newRoom:
             UI.CreateRoomScreen(onSubmit: { params in
                 guard let matrixClient = appState.matrixClient else { return }
