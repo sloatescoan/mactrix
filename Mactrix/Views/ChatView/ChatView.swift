@@ -3,15 +3,15 @@ import MatrixRustSDK
 import Models
 import UI
 
-struct TimelineItemView: View {
+struct TimelineEventView: View {
     
-    let timeline: Timeline?
+    let timeline: LiveTimeline?
     let event: MatrixRustSDK.EventTimelineItem
     
     var body: some View {
         switch event.content {
         case .msgLike(content: let content):
-            ChatMessageView(timeline: timeline, event: event, msg: content)
+            ChatMessageView(timeline: timeline?.timeline, event: event, msg: content)
         case .callInvite:
             UI.GenericEventView(event: event, name: "Call invite")
         case .rtcNotification:
@@ -30,14 +30,24 @@ struct TimelineItemView: View {
     }
 }
 
-#Preview {
-    TimelineItemView(timeline: nil, event: .previewTextItem)
+struct TimelineItemView: View {
+    let timeline: LiveTimeline?
+    let item: TimelineItem
+    
+    var body: some View {
+        if let event = item.asEvent() {
+            TimelineEventView(timeline: timeline, event: event)
+        }
+        if let virtual = item.asVirtual() {
+            UI.VirtualItemView(item: virtual.asModel)
+        }
+    }
 }
 
 struct ChatView: View {
     @Environment(AppState.self) private var appState
     
-    let room: MatrixRustSDK.Room
+    let room: LiveRoom
     @State private var timeline: LiveTimeline? = nil
     
     @State private var errorMessage: String? = nil
@@ -57,14 +67,7 @@ struct ChatView: View {
         if let timelineItems = timeline?.timelineItems {
                     LazyVStack {
                             ForEach(timelineItems) { item in
-                                if let event = item.asEvent() {
-                                    TimelineItemView(timeline: timeline?.timeline, event: event)
-                                        .id(item.id)
-                                }
-                                if let virtual = item.asVirtual() {
-                                    UI.VirtualItemView(item: virtual.asModel)
-                                        .id(item.id)
-                                }
+                                TimelineItemView(timeline: timeline, item: item)
                             }
                     }
                     .scrollTargetLayout()
@@ -96,6 +99,11 @@ struct ChatView: View {
                         .frame(maxWidth: .infinity)
                 }
                 
+                HStack {
+                    UI.UserTypingIndicator(names: room.typingUserIds)
+                    Spacer()
+                }
+                .padding(.horizontal, 10)
             }
             .scrollPosition(id: $scrollPosition, anchor: .bottom)
             .scrollIndicators(.hidden)
