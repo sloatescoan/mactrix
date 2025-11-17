@@ -94,8 +94,6 @@ struct ChatView: View {
             }
         }
         .onScrollTargetVisibilityChange(idType: TimelineItem.ID.self) { visibleTimelineItemIds in
-            print("Visible Ids: \(visibleTimelineItemIds)")
-            
             var latestEvent: MatrixRustSDK.TimelineItem? = nil
             
             for id in visibleTimelineItemIds {

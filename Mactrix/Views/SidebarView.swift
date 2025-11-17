@@ -189,8 +189,29 @@ struct SidebarView: View {
     
     @Binding var selectedRoomId: String?
     
+    var syncState: String {
+        switch appState.matrixClient?.syncState {
+        case .idle:
+            "idle"
+        case .running:
+            "online"
+        case .terminated:
+            "terminated"
+        case .error:
+            "error"
+        case .offline:
+            "offline"
+        case nil:
+            "logged out"
+        }
+    }
+    
     var body: some View {
         List(selection: $selectedRoomId) {
+            
+            Text("Sync: \(syncState)")
+                .foregroundStyle(.secondary)
+            
             if !favorites.isEmpty {
                 Section("Favorites") {
                     ForEach(favorites) { room in

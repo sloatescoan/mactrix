@@ -1,11 +1,30 @@
 import SwiftUI
 import Models
 
+public struct UserProfileRow<Profile: UserProfile>: View {
+    let userProfile: Profile
+    let imageLoader: ImageLoader?
+    
+    @State private var image: Image? = nil
+    
+    public init(userProfile: Profile, imageLoader: ImageLoader?) {
+        self.userProfile = userProfile
+        self.imageLoader = imageLoader
+    }
+    
+    public var body: some View {
+        Label(title: { Text(userProfile.displayName ?? userProfile.userId) }, icon: {
+            AvatarImage(avatarUrl: userProfile.avatarUrl, imageLoader: imageLoader, placeholder: { Image(systemName: "person") })
+        })
+    }
+}
+
 struct RoomInspectorMemberRow<RoomMember: Models.RoomMember>: View {
     let member: RoomMember
+    let imageLoader: ImageLoader?
     
     var body: some View {
-        Text(member.displayName ?? member.userId)
+        UserProfileRow(userProfile: member, imageLoader: imageLoader)
     }
 }
 
@@ -14,12 +33,14 @@ public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember
     let members: [RoomMember]?
     
     let roomInfo: RoomInfo?
+    let imageLoader: ImageLoader?
     
     @Binding var inspectorVisible: Bool
     
-    public init(room: Room, members: [RoomMember]?, roomInfo: RoomInfo?, inspectorVisible: Binding<Bool>) {
+    public init(room: Room, members: [RoomMember]?, roomInfo: RoomInfo?, imageLoader: ImageLoader?, inspectorVisible: Binding<Bool>) {
         self.room = room
         self.members = members
+        self.imageLoader = imageLoader
         self.roomInfo = roomInfo
         self._inspectorVisible = inspectorVisible
     }
@@ -29,7 +50,7 @@ public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember
         let roleMembers = allMembers.filter { $0.roleForPowerLevel == role }
         Section("\(title) (\(roleMembers.count))") {
             ForEach(roleMembers) { member in
-                RoomInspectorMemberRow(member: member)
+                RoomInspectorMemberRow(member: member, imageLoader: imageLoader)
             }
         }
     }
@@ -93,20 +114,12 @@ public struct RoomInspectorView<Room: Models.Room, RoomMember: Models.RoomMember
             }
         }
         .inspectorColumnWidth(min: 200, ideal: 250, max: 400)
-        .toolbar {
-            Spacer()
-            Button {
-                inspectorVisible.toggle()
-            } label: {
-                Label("Toggle Inspector", systemImage: "info.circle")
-            }
-        }
     }
 }
 
 
 #Preview {
     RoomInspectorView<MockRoom, MockRoomMember>
-        .init(room: MockRoom.previewRoom, members: nil, roomInfo: MockRoomInfo(), inspectorVisible: .constant(true))
+        .init(room: MockRoom.previewRoom, members: nil, roomInfo: MockRoomInfo(), imageLoader: nil, inspectorVisible: .constant(true))
         .frame(width: 250, height: 500)
 }

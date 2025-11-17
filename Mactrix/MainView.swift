@@ -9,9 +9,6 @@ struct MainView: View {
     
     @State private var showWelcomeSheet: Bool = false
     
-    @SceneStorage("MainView.inspectorVisible")
-    private var inspectorVisible: Bool = false
-    
     @SceneStorage("MainView.selectedRoomId")
     private var selectedRoomId: String?
     
@@ -41,15 +38,9 @@ struct MainView: View {
             detail: { details }
         )
         .environment(windowState)
-        .inspector(isPresented: $inspectorVisible, content: {
-            switch windowState.selectedScreen {
-            case .joinedRoom(let room):
-                UI.RoomInspectorView(room: room, members: room.fetchedMembers, roomInfo: room.roomInfo, inspectorVisible: $inspectorVisible)
-            case .previewRoom(let room):
-                Text("Preview room: \(room.info().name ?? "unknown name")")
-            case .none, .newRoom:
-                Text("No room selected")
-            }
+        .inspector(isPresented: windowState.inspectorOrSearchActive, content: {
+            InspectorScreen()
+                .environment(windowState)
         })
         .task { await attemptLoadUserSession() }
         .sheet(isPresented: $showWelcomeSheet, onDismiss: onLoginModalDismiss ) {
@@ -68,6 +59,26 @@ struct MainView: View {
             if authFailed == true {
                 print("Logging out since auth failed")
                 appState.matrixClient = nil
+            }
+        }
+        .searchable(text: $windowState.searchQuery, tokens: $windowState.searchTokens, isPresented: $windowState.searchFocused, placement: .automatic, prompt: "Search") { token in
+            switch token {
+            case .users:
+                Text("Users")
+            case .rooms:
+                Text("Public Rooms")
+            case .spaces:
+                Text("Public Spaces")
+            case .messages:
+                Text("Messages")
+            }
+        }
+        .searchSuggestions {
+            if windowState.searchTokens.isEmpty {
+                Label("Users", systemImage: "person").searchCompletion(SearchToken.users)
+                Label("Public Rooms", systemImage: "number").searchCompletion(SearchToken.rooms)
+                Label("Public Spaces", systemImage: "network").searchCompletion(SearchToken.spaces)
+                Label("Messages", systemImage: "magnifyingglass.circle").searchCompletion(SearchToken.messages)
             }
         }
     }

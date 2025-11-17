@@ -1,10 +1,3 @@
-//
-//  MactrixApp.swift
-//  Mactrix
-//
-//  Created by Viktor Strate Kløvedal on 30/10/2025.
-//
-
 import SwiftUI
 
 let applicationID = "dk.qpqp.mactrix"

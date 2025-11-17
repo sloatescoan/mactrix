@@ -184,14 +184,19 @@ enum SelectedScreen {
     }
     
     var syncService: SyncService?
+    var syncState: SyncServiceState = .terminated
     var roomListService: RoomListService?
     var roomListEntriesHandle: RoomListEntriesWithDynamicAdaptersResult?
+    
+    private var syncStateHandle: TaskHandle? = nil
     
     var notificationClient: NotificationClient?
     
     func startSync() async throws {
         let _syncService = try await client.syncService().finish()
         syncService = _syncService
+        
+        syncStateHandle = _syncService.state(listener: self)
         
         let _roomListService = _syncService.roomListService()
         roomListService = _roomListService

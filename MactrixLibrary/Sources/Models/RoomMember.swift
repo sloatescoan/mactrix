@@ -23,7 +23,7 @@ public enum RoomMemberRole {
     case user
 }
 
-public protocol RoomMember: Identifiable {
+public protocol RoomMember: Identifiable, UserProfile {
     var userId: String { get }
     var displayName: String? { get }
     var avatarUrl: String? { get }

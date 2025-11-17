@@ -31,3 +31,9 @@ extension MatrixClient: RoomListEntriesListener {
         }
     }
 }
+
+extension MatrixClient: SyncServiceStateObserver {
+    func onUpdate(state: MatrixRustSDK.SyncServiceState) {
+        self.syncState = state
+    }
+}

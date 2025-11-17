@@ -137,3 +137,7 @@ extension MatrixRustSDK.SpaceRoom: @retroactive Identifiable {
         self.roomId
     }
 }
+
+extension MatrixRustSDK.UserProfile: @retroactive Identifiable, Models.UserProfile {
+    public var id: String { self.userId }
+}
