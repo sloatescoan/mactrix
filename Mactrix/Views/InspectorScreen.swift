@@ -25,13 +25,36 @@ struct InspectorScreen: View {
     }
     
     var body: some View {
+        @Bindable var windowState = windowState
+        
         content
-            .toolbar {
-                Spacer()
-                Button {
-                    windowState.inspectorVisible.toggle()
-                } label: {
-                    Label("Toggle Inspector", systemImage: "info.circle")
+            .searchable(text: $windowState.searchQuery, tokens: $windowState.searchTokens, isPresented: $windowState.searchFocused, placement: .automatic, prompt: "Search") { token in
+                switch token {
+                case .users:
+                    Text("Users")
+                case .rooms:
+                    Text("Public Rooms")
+                case .spaces:
+                    Text("Public Spaces")
+                case .messages:
+                    Text("Messages")
+                }
+            }
+            .searchSuggestions {
+                if windowState.searchTokens.isEmpty {
+                    Label("Users", systemImage: "person").searchCompletion(SearchToken.users)
+                    Label("Public Rooms", systemImage: "number").searchCompletion(SearchToken.rooms)
+                    Label("Public Spaces", systemImage: "network").searchCompletion(SearchToken.spaces)
+                    Label("Messages", systemImage: "magnifyingglass.circle").searchCompletion(SearchToken.messages)
+                }
+            }
+            .toolbar(id: "inspector-toolbar") {
+                ToolbarItem(id: "toggle-inspector") {
+                    Button {
+                        windowState.inspectorVisible.toggle()
+                    } label: {
+                        Label("Toggle Inspector", systemImage: "info.circle")
+                    }
                 }
             }
     }

@@ -265,16 +265,6 @@ struct SidebarView: View {
                 }
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    windowState.selectedScreen = .newRoom
-                } label: {
-                    Label("Create room", systemImage: "plus.bubble")
-                }
-                .help("Create a new room")
-            }
-        }
     }
 }
 

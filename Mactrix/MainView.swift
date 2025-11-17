@@ -38,6 +38,7 @@ struct MainView: View {
             detail: { details }
         )
         .environment(windowState)
+        .focusedSceneValue(windowState)
         .inspector(isPresented: windowState.inspectorOrSearchActive, content: {
             InspectorScreen()
                 .environment(windowState)
@@ -61,24 +62,9 @@ struct MainView: View {
                 appState.matrixClient = nil
             }
         }
-        .searchable(text: $windowState.searchQuery, tokens: $windowState.searchTokens, isPresented: $windowState.searchFocused, placement: .automatic, prompt: "Search") { token in
-            switch token {
-            case .users:
-                Text("Users")
-            case .rooms:
-                Text("Public Rooms")
-            case .spaces:
-                Text("Public Spaces")
-            case .messages:
-                Text("Messages")
-            }
-        }
-        .searchSuggestions {
-            if windowState.searchTokens.isEmpty {
-                Label("Users", systemImage: "person").searchCompletion(SearchToken.users)
-                Label("Public Rooms", systemImage: "number").searchCompletion(SearchToken.rooms)
-                Label("Public Spaces", systemImage: "network").searchCompletion(SearchToken.spaces)
-                Label("Messages", systemImage: "magnifyingglass.circle").searchCompletion(SearchToken.messages)
+        .toolbar(id: "main-toolbar") {
+            ToolbarItem(id: "create-room", placement: .secondaryAction) {
+                AppCommands.createRoomButton(windowState: windowState)
             }
         }
     }
