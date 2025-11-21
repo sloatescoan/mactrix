@@ -1,11 +1,13 @@
 import MatrixRustSDK
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MessageImageView: View {
     let content: ImageMessageContent
 
     @Environment(AppState.self) private var appState
 
+    @State private var imageData: Data? = nil
     @State private var image: Image? = nil
     @State private var errorMessage: String? = nil
 
@@ -21,6 +23,16 @@ struct MessageImageView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(maxHeight: 300)
+                        .onDrag {
+                            let itemProvider = NSItemProvider()
+                            itemProvider.suggestedName = content.filename
+                            let data = imageData
+                            itemProvider.registerDataRepresentation(for: UTType.image, visibility: .all) { completion in
+                                completion(data, nil)
+                                return nil
+                            }
+                            return itemProvider
+                        }
                 } else {
                     ProgressView {
                         Text("Fetching image")
@@ -41,7 +53,9 @@ struct MessageImageView: View {
 
             do {
                 let data = try await matrixClient.client.getMediaContent(mediaSource: .fromUrl(url: url))
-                image = try await Image(importing: data, contentType: nil)
+                imageData = data
+                let contentType = content.info?.mimetype.flatMap { UTType(mimeType: $0) }
+                image = try await Image(importing: data, contentType: contentType)
             } catch {
                 errorMessage = error.localizedDescription
             }
