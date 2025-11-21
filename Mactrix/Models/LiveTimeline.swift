@@ -1,6 +1,7 @@
 import Foundation
 import MatrixRustSDK
 
+@MainActor
 @Observable public final class LiveTimeline {
     public let timeline: Timeline
     var timelineHandle: TaskHandle?
@@ -11,7 +12,15 @@ import MatrixRustSDK
     public private(set) var hitTimelineStart: Bool = false
 
     public init(room: MatrixRustSDK.Room) async throws {
-        timeline = try await room.timeline()
+        let config = TimelineConfiguration(
+            focus: .live(hideThreadedEvents: true),
+            filter: .all,
+            internalIdPrefix: nil,
+            dateDividerMode: .daily,
+            trackReadReceipts: true,
+            reportUtds: false
+        )
+        timeline = try await room.timelineWithConfiguration(configuration: config)
 
         // Listen to timeline item updates.
         timelineHandle = await timeline.addListener(listener: self)
@@ -27,7 +36,7 @@ import MatrixRustSDK
     }
 }
 
-extension LiveTimeline: TimelineListener {
+extension LiveTimeline: @MainActor TimelineListener {
     public func onUpdate(diff: [TimelineDiff]) {
         for update in diff {
             switch update {
@@ -58,7 +67,7 @@ extension LiveTimeline: TimelineListener {
     }
 }
 
-extension LiveTimeline: PaginationStatusListener {
+extension LiveTimeline: @MainActor PaginationStatusListener {
     public func onUpdate(status: MatrixRustSDK.RoomPaginationStatus) {
         paginating = status
     }

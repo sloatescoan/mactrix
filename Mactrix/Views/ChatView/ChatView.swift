@@ -25,7 +25,7 @@ struct ChatView: View {
 
     @State private var errorMessage: String? = nil
 
-    @State private var scrollPosition = ScrollPosition(edge: .bottom)
+    @State private var scrollPosition = ScrollPosition(idType: TimelineItem.ID.self)
     @State private var scrollNearTop: Bool = false
     @State private var scrollAtBottom: Bool = true
     @State private var latestVisibleEvent: MatrixRustSDK.TimelineItem? = nil
@@ -85,7 +85,7 @@ struct ChatView: View {
         .defaultScrollAnchor(.bottom)
         .contentMargins(.bottom, 10)
         .contentMargins(.top, 20)
-        .safeAreaPadding(.bottom, 60)
+        .safeAreaPadding(.bottom, 60) // chat input overlay
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.visibleRect.maxY - geo.containerSize.height < 400.0
         } action: { _, nearTop in
@@ -95,10 +95,11 @@ struct ChatView: View {
             }
         }
         .onScrollTargetVisibilityChange(idType: TimelineItem.ID.self) { visibleTimelineItemIds in
+            guard let timelineItems = timeline?.timelineItems else { return }
             var latestEvent: MatrixRustSDK.TimelineItem? = nil
 
             for id in visibleTimelineItemIds {
-                guard let item = timeline?.timelineItems.first(where: { $0.id == id }) else {
+                guard let item = timelineItems.first(where: { $0.id == id }) else {
                     continue
                 }
 
@@ -117,6 +118,12 @@ struct ChatView: View {
         }
     }
 
+    var toolbarSubtitle: String {
+        guard let topic = room.topic() else { return "" }
+        let firstLine = topic.split(separator: "\n").first ?? ""
+        return String(firstLine)
+    }
+
     @ViewBuilder
     var joinedRoom: some View {
         timelineScrollView
@@ -125,7 +132,7 @@ struct ChatView: View {
             }
             .background(Color(NSColor.controlBackgroundColor))
             .navigationTitle(room.displayName() ?? "Unknown room")
-            .navigationSubtitle(room.topic() ?? "")
+            .navigationSubtitle(toolbarSubtitle)
             .frame(minWidth: 250, minHeight: 200)
             .task(id: room) {
                 do {

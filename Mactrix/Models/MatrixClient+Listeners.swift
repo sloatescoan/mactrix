@@ -2,7 +2,7 @@ import Foundation
 import MatrixRustSDK
 import UserNotifications
 
-extension MatrixClient: RoomListEntriesListener {
+extension MatrixClient: @MainActor RoomListEntriesListener {
     func onUpdate(roomEntriesUpdate: [RoomListEntriesUpdate]) {
         for update in roomEntriesUpdate {
             switch update {
@@ -33,31 +33,40 @@ extension MatrixClient: RoomListEntriesListener {
     }
 }
 
-extension MatrixClient: SyncServiceStateObserver {
+extension MatrixClient: @MainActor SyncServiceStateObserver {
     func onUpdate(state: MatrixRustSDK.SyncServiceState) {
         syncState = state
     }
 }
 
-extension MatrixClient: VerificationStateListener {
+extension MatrixClient: @MainActor VerificationStateListener {
     func onUpdate(status: MatrixRustSDK.VerificationState) {
         verificationState = status
     }
 }
 
-extension MatrixClient: RoomListServiceStateListener {
+extension MatrixClient: @MainActor RoomListServiceStateListener {
     func onUpdate(state: MatrixRustSDK.RoomListServiceState) {
         roomListServiceState = state
     }
 }
 
-extension MatrixClient: RoomListServiceSyncIndicatorListener {
+extension MatrixClient: @MainActor RoomListServiceSyncIndicatorListener {
     func onUpdate(syncIndicator: MatrixRustSDK.RoomListServiceSyncIndicator) {
         showRoomSyncIndicator = syncIndicator
     }
 }
 
-extension MatrixClient: SessionVerificationControllerDelegate {
+extension MatrixClient: @MainActor MatrixRustSDK.ClientDelegate {
+    func didReceiveAuthError(isSoftLogout: Bool) {
+        print("did receive auth error: soft logout \(isSoftLogout)")
+        if !isSoftLogout {
+            authenticationFailed = true
+        }
+    }
+}
+
+extension MatrixClient: @MainActor SessionVerificationControllerDelegate {
     func didReceiveVerificationRequest(details: MatrixRustSDK.SessionVerificationRequestDetails) {
         print("session verification: didReceiveVerificationRequest")
         sessionVerificationRequest = details

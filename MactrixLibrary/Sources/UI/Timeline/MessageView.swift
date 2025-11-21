@@ -1,14 +1,13 @@
-import MatrixRustSDK
 import Models
 import SwiftUI
-import UI
 
-struct ChatMessageView: View, UI.MessageEventActions {
-    @Environment(AppState.self) private var appState
+public struct MessageView<Event: EventTimelineItem, MsgContent: MsgLikeContent, Actions: MessageEventActions>: View {
+    // let timeline: MatrixRustSDK.Timeline?
+    let event: Event
+    let msg: MsgContent
 
-    let timeline: MatrixRustSDK.Timeline?
-    let event: MatrixRustSDK.EventTimelineItem
-    let msg: MatrixRustSDK.MsgLikeContent
+    let actions: Actions
+    let imageLoader: ImageLoader
 
     var name: String {
         if case let .ready(displayName, _, _) = event.senderProfileDetails, let displayName = displayName {
@@ -17,36 +16,12 @@ struct ChatMessageView: View, UI.MessageEventActions {
         return event.sender
     }
 
-    func toggleReaction(key: String) {
-        Task {
-            do {
-                let _ = try await timeline?.toggleReaction(itemId: event.eventOrTransactionId, key: key)
-            } catch {
-                print("Failed to toggle reaction: \(error)")
-            }
-        }
-    }
-
-    func reply() {}
-
-    func replyInThread() {}
-
-    func pin() {
-        guard case let .eventId(eventId: eventId) = event.eventOrTransactionId else { return }
-        Task {
-            do {
-                let _ = try await timeline?.pinEvent(eventId: eventId)
-            } catch {
-                print("Failed to ping message: \(error)")
-            }
-        }
-    }
-
     @ViewBuilder
     var message: some View {
         switch msg.kind {
         case let .message(content: content):
-            switch content.msgType {
+            Text("Message: \(content.body)")
+            /*switch content.msgType {
             case let .emote(content: content):
                 Text("Emote: \(content.body)").textSelection(.enabled)
             case let .image(content: content):
@@ -67,7 +42,7 @@ struct ChatMessageView: View, UI.MessageEventActions {
                 Text("Location: \(content.body) \(content.geoUri)").textSelection(.enabled)
             case let .other(msgtype: msgtype, body: body):
                 Text("Other: \(msgtype) \(body)").textSelection(.enabled)
-            }
+            }*/
         case .sticker(body: let body, info: _, source: _):
             Text("Sticker: \(body)").textSelection(.enabled)
         case .poll(question: let question, kind: _, maxSelections: _, answers: _, votes: _, endTime: _, hasBeenEdited: _):
@@ -87,7 +62,7 @@ struct ChatMessageView: View, UI.MessageEventActions {
         }
     }
 
-    func embeddEventDetails(embeddedEvent: MatrixRustSDK.EmbeddedEventDetails) -> String {
+    func embeddEventDetails(embeddedEvent: EmbeddedEventDetails<MsgContent>) -> String {
         switch embeddedEvent {
         case .unavailable:
             "embedded event unavailable"
@@ -130,10 +105,10 @@ struct ChatMessageView: View, UI.MessageEventActions {
         }
     }
 
-    var body: some View {
-        UI.MessageEventView(event: event, reactions: msg.reactions, actions: self, imageLoader: appState.matrixClient) {
+    public var body: some View {
+        MessageEventView(event: event, reactions: msg.reactions, actions: actions, imageLoader: imageLoader) {
             VStack(alignment: .leading, spacing: 20) {
-                if msg.inReplyTo != nil || msg.threadRoot != nil || msg.threadSummary != nil {
+                /*if msg.inReplyTo != nil || msg.threadRoot != nil || msg.threadSummary != nil {
                     VStack(alignment: .leading) {
                         if let replyTo = msg.inReplyTo {
                             Text("Reply to \(replyTo.eventId().prefix(8)): \(embeddEventDetails(embeddedEvent: replyTo.event()))").italic()
@@ -149,7 +124,7 @@ struct ChatMessageView: View, UI.MessageEventActions {
                         }
                     }
                     .foregroundStyle(.gray)
-                }
+                }*/
 
                 message
             }

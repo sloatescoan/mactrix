@@ -1,4 +1,3 @@
-import AuthenticationServices
 import Foundation
 import KeychainAccess
 import MatrixRustSDK
@@ -44,62 +43,14 @@ struct UserSession: Codable {
 
     static func loadUserFromKeychain() throws -> Self? {
         print("Load user from keychain")
-        #if DEBUG
-            if true {
-                return try JSONDecoder().decode(Self.self, from: DevSecrets.matrixSession.data(using: .utf8)!)
-            }
-        #endif
+        /* #if DEBUG
+             if true {
+                 return try JSONDecoder().decode(Self.self, from: DevSecrets.matrixSession.data(using: .utf8)!)
+             }
+         #endif */
         let keychain = Keychain(service: applicationID)
         guard let keychainData = try keychain.getData(keychainKey) else { return nil }
         return try JSONDecoder().decode(Self.self, from: keychainData)
-    }
-}
-
-struct HomeserverLogin {
-    let storeID: String
-    let unauthenticatedClient: ClientProtocol
-    let loginDetails: HomeserverLoginDetailsProtocol
-
-    init(storeID: String, unauthenticatedClient: ClientProtocol, loginDetails: HomeserverLoginDetailsProtocol) {
-        self.storeID = storeID
-        self.unauthenticatedClient = unauthenticatedClient
-        self.loginDetails = loginDetails
-    }
-
-    func loginPassword(homeServer _: String, username: String, password: String) async throws -> MatrixClient {
-        // Login using password authentication.
-        try await unauthenticatedClient.login(username: username, password: password, initialDeviceName: "Mactrix", deviceId: nil)
-        return try onSuccessfullLogin()
-    }
-
-    private var oidcConfiguration: OidcConfiguration {
-        // redirect uri must be reverse domain of client uri
-        OidcConfiguration(clientName: "Mactrix", redirectUri: "com.github:/", clientUri: "https://github.com/viktorstrate/mactrix", logoUri: nil, tosUri: nil, policyUri: nil, staticRegistrations: [:])
-    }
-
-    func loginOidc(webAuthSession: WebAuthenticationSession) async throws -> MatrixClient {
-        print("login oidc begin")
-        let authInfo = try await unauthenticatedClient.urlForOidc(oidcConfiguration: oidcConfiguration, prompt: .login, loginHint: nil, deviceId: nil, additionalScopes: nil)
-        let url = URL(string: authInfo.loginUrl())!
-
-        print("Auth url: \(url)")
-
-        let callbackUrl = try await webAuthSession.authenticate(using: url, callback: .customScheme("com.github"), additionalHeaderFields: [:])
-
-        print("after sign in")
-
-        try await unauthenticatedClient.loginWithOidcCallback(callbackUrl: callbackUrl.absoluteString)
-
-        return try onSuccessfullLogin()
-    }
-
-    fileprivate func onSuccessfullLogin() throws -> MatrixClient {
-        let matrixClient = MatrixClient(storeID: storeID, client: unauthenticatedClient)
-
-        let userSession = try matrixClient.userSession()
-        try userSession.saveUserToKeychain()
-
-        return matrixClient
     }
 }
 
@@ -110,6 +61,7 @@ enum SelectedScreen {
     case none
 }
 
+@MainActor
 @Observable class MatrixClient {
     let storeID: String
     var client: ClientProtocol!
@@ -264,20 +216,11 @@ enum SelectedScreen {
     }
 }
 
-extension MatrixClient: MatrixRustSDK.ClientDelegate {
-    func didReceiveAuthError(isSoftLogout: Bool) {
-        print("did receive auth error: soft logout \(isSoftLogout)")
-        if !isSoftLogout {
-            authenticationFailed = true
-        }
-    }
-}
-
 enum MatrixClientRestoreSessionError: Error {
     case sessionNotFound, wrongUserId
 }
 
-extension MatrixClient: MatrixRustSDK.ClientSessionDelegate {
+extension MatrixClient: @MainActor MatrixRustSDK.ClientSessionDelegate {
     func retrieveSessionFromKeychain(userId: String) throws -> MatrixRustSDK.Session {
         print("client session delegate: retrieve session from keychain: \(userId)")
 

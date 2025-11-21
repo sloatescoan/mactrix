@@ -100,9 +100,20 @@ public struct MessageEventView<MessageView: View, EventTimelineItem: Models.Even
             }
             Divider().frame(height: 18)
             HoverButton(icon: { Image(systemName: "face.smiling") }, tooltip: "React") {}
-            HoverButton(icon: { Image(systemName: "arrowshape.turn.up.left") }, tooltip: "Reply") {}
-            HoverButton(icon: { Image(systemName: "ellipsis.message") }, tooltip: "Reply in thread") {}
-            HoverButton(icon: { Image(systemName: "pin") }, tooltip: "Pin") {}
+
+            if event.canBeRepliedTo {
+                HoverButton(icon: { Image(systemName: "arrowshape.turn.up.left") }, tooltip: "Reply") {
+                    actions.reply()
+                }
+
+                HoverButton(icon: { Image(systemName: "ellipsis.message") }, tooltip: "Reply in thread") {
+                    actions.replyInThread()
+                }
+            }
+
+            HoverButton(icon: { Image(systemName: "pin") }, tooltip: "Pin") {
+                actions.pin()
+            }
         }
         .padding(2)
         .background(

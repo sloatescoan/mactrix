@@ -2,6 +2,8 @@ import Foundation
 import MatrixRustSDK
 import Models
 
+extension MatrixRustSDK.RoomMember: Models.UserProfile {}
+
 extension MatrixRustSDK.RoomMember: @retroactive Identifiable, Models.RoomMember {
     public var id: String {
         userId
