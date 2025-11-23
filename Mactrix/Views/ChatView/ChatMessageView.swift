@@ -28,11 +28,15 @@ struct ChatMessageView: View, UI.MessageEventActions {
         }
     }
 
-    func reply() {}
+    func reply() {
+        print("Reply to event: \(event.eventOrTransactionId.id)")
+        timeline.sendReplyTo = event
+    }
 
     func replyInThread() {}
 
     func pin() {
+        print("Pinning message")
         guard case let .eventId(eventId: eventId) = event.eventOrTransactionId else { return }
         Task {
             do {
@@ -88,53 +92,6 @@ struct ChatMessageView: View, UI.MessageEventActions {
         }
     }
 
-    @ViewBuilder
-    func embeddedMessageView(embeddedEvent: MatrixRustSDK.EmbeddedEventDetails, action: @escaping () -> Void) -> some View {
-        switch embeddedEvent {
-        case .unavailable, .pending:
-            UI.MessageReplyView(
-                username: "loading@username.org",
-                message: "Phasellus sit amet purus ac enim semper convallis. Nullam a gravida libero.",
-                action: action
-            )
-            .redacted(reason: .placeholder)
-        case let .ready(content, sender, _, _, _):
-            switch content {
-            case let .msgLike(content):
-                switch content.kind {
-                case let .message(content):
-                    UI.MessageReplyView(username: sender, message: content.body, action: action)
-                case let .sticker(body, _, _):
-                    UI.MessageReplyView(username: sender, message: body, action: action)
-                case let .poll(question, _, _, _, _, _, _):
-                    UI.MessageReplyView(username: sender, message: question, action: action)
-                case .redacted:
-                    UI.MessageReplyView(username: sender, message: "redacted", action: action)
-                case .unableToDecrypt:
-                    UI.MessageReplyView(username: sender, message: "unable to decrypt", action: action)
-                case .other:
-                    UI.MessageReplyView(username: sender, message: "other event", action: action)
-                }
-            case .callInvite:
-                UI.MessageReplyView(username: sender, message: "call invite", action: action)
-            case .rtcNotification:
-                UI.MessageReplyView(username: sender, message: "rtc notification", action: action)
-            case .roomMembership:
-                UI.MessageReplyView(username: sender, message: "room membership", action: action)
-            case .profileChange:
-                UI.MessageReplyView(username: sender, message: "profile change", action: action)
-            case .state:
-                UI.MessageReplyView(username: sender, message: "state change", action: action)
-            case .failedToParseMessageLike:
-                UI.MessageReplyView(username: sender, message: "failed to parse message", action: action)
-            case .failedToParseState:
-                UI.MessageReplyView(username: sender, message: "failed to parse state", action: action)
-            }
-        case let .error(message):
-            Text("error: \(message)")
-        }
-    }
-    
     var isEventFocused: Bool {
         guard let focusedEventId = timeline.focusedTimelineEventId else { return false }
         return focusedEventId == event.eventOrTransactionId.id
@@ -143,10 +100,10 @@ struct ChatMessageView: View, UI.MessageEventActions {
     var body: some View {
         UI.MessageEventView(event: event, focused: isEventFocused, reactions: msg.reactions, actions: self, imageLoader: appState.matrixClient) {
             VStack(alignment: .leading, spacing: 20) {
-                if msg.inReplyTo != nil || msg.threadRoot != nil || msg.threadSummary != nil {
+                if msg.inReplyTo != nil || (!timeline.isThreadFocus && msg.threadSummary != nil) {
                     VStack(alignment: .leading) {
                         if let replyTo = msg.inReplyTo {
-                            embeddedMessageView(embeddedEvent: replyTo.event()) {
+                            EmbeddedMessageView(embeddedEvent: replyTo.event()) {
                                 timeline.focusEvent(id: replyTo.eventId())
                             }
                         }
@@ -154,7 +111,7 @@ struct ChatMessageView: View, UI.MessageEventActions {
                         if let threadSummary = msg.threadSummary {
                             Text("Thread summary (\(threadSummary.numReplies()) messages)")
                                 .italic()
-                            embeddedMessageView(embeddedEvent: threadSummary.latestEvent()) {
+                            EmbeddedMessageView(embeddedEvent: threadSummary.latestEvent()) {
                                 timeline.focusThread(rootEventId: event.eventOrTransactionId.id)
                                 windowState.inspectorVisible = true
                             }

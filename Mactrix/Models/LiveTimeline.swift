@@ -5,39 +5,45 @@ import SwiftUI
 @MainActor
 @Observable public final class LiveTimeline {
     let room: MatrixRustSDK.Room
+    public let isThreadFocus: Bool
+    
     public var timeline: Timeline?
-    var timelineHandle: TaskHandle?
-    var paginateHandle: TaskHandle?
+    
+    private var timelineHandle: TaskHandle?
+    private var paginateHandle: TaskHandle?
 
     public var scrollPosition = ScrollPosition(idType: TimelineItem.ID.self, edge: .bottom)
     public var errorMessage: String?
     public var focusedTimelineEventId: String?
     public var focusedThreadTimeline: LiveTimeline?
+    public var sendReplyTo: MatrixRustSDK.EventTimelineItem? = nil
 
     public private(set) var timelineItems: [TimelineItem]?
     public private(set) var paginating: RoomPaginationStatus = .idle(hitTimelineStart: false)
     public private(set) var hitTimelineStart: Bool = false
 
     public init(room: MatrixRustSDK.Room) {
+        self.isThreadFocus = false
         self.room = room
         Task {
             do {
                 try await configureTimeline()
             } catch {
                 print("failed to configure timeline: \(error)")
-                errorMessage = error.localizedDescription
+                self.errorMessage = error.localizedDescription
             }
         }
     }
 
     public init(room: MatrixRustSDK.Room, focusThread threadId: String) {
+        self.isThreadFocus = true
         self.room = room
         Task {
             do {
                 try await configureTimeline(threadId: threadId)
             } catch {
                 print("failed to configure timeline: \(error)")
-                errorMessage = error.localizedDescription
+                self.errorMessage = error.localizedDescription
             }
         }
     }

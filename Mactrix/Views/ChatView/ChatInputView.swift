@@ -4,6 +4,7 @@ import SwiftUI
 struct ChatInputView: View {
     let room: Room
     let timeline: Timeline?
+    @Binding var replyTo: MatrixRustSDK.EventTimelineItem?
 
     @State private var chatInput: String = ""
     @FocusState private var chatFocused: Bool
@@ -14,13 +15,35 @@ struct ChatInputView: View {
 
         Task {
             let msg = messageEventContentFromMarkdown(md: chatInput)
-            let _ = try await timeline.send(msg: msg)
+
+            do {
+                if let replyTo {
+                    let _ = try await timeline.sendReply(msg: msg, eventId: replyTo.eventOrTransactionId.id)
+                } else {
+                    let _ = try await timeline.send(msg: msg)
+                }
+            } catch {
+                print("failed to send message: \(error)")
+            }
+
             chatInput = ""
+            replyTo = nil
         }
     }
 
+    var replyEmbeddedDetails: EmbeddedEventDetails? {
+        guard let replyTo else { return nil }
+
+        return .ready(content: replyTo.content, sender: replyTo.sender, senderProfile: replyTo.senderProfile, timestamp: replyTo.timestamp, eventOrTransactionId: replyTo.eventOrTransactionId)
+    }
+
     var body: some View {
-        VStack {
+        VStack(alignment: .leading) {
+            if let replyEmbeddedDetails {
+                EmbeddedMessageView(embeddedEvent: replyEmbeddedDetails) {
+                    replyTo = nil
+                }
+            }
             TextField("Message room", text: $chatInput, axis: .vertical)
                 .focused($chatFocused)
                 .onSubmit { sendMessage() }

@@ -87,7 +87,6 @@ struct ChatView: View {
         }
         .scrollPosition($timeline.scrollPosition)
         .defaultScrollAnchor(.bottom)
-        .contentMargins(.bottom, 10)
         .safeAreaPadding(.bottom, 60) // chat input overlay
         .onScrollGeometryChange(for: Bool.self) { geo in
             geo.visibleRect.maxY - geo.containerSize.height < 400.0
@@ -132,7 +131,7 @@ struct ChatView: View {
     var joinedRoom: some View {
         timelineScrollView
             .overlay(alignment: .bottom) {
-                ChatInputView(room: room, timeline: timeline.timeline)
+                ChatInputView(room: room, timeline: timeline.timeline, replyTo: $timeline.sendReplyTo)
             }
             .background(Color(NSColor.controlBackgroundColor))
             .navigationTitle(room.displayName() ?? "Unknown room")

@@ -50,6 +50,7 @@ struct InspectorScreen: View {
                 } label: {
                     Label("Toggle Inspector", systemImage: "info.circle")
                 }
+                .help("Toggle Inspector")
             }
     }
 }
