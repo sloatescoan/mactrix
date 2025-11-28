@@ -2,6 +2,7 @@ import MatrixRustSDK
 import OSLog
 import SwiftUI
 import UI
+import Utils
 
 struct MainView: View {
     @Environment(AppState.self) var appState
@@ -12,9 +13,9 @@ struct MainView: View {
 
     @ViewBuilder var details: some View {
         switch windowState.selectedScreen {
-        case let .joinedRoom(timeline: timeline):
+        case .joinedRoom(timeline: let timeline):
             ChatView(timeline: timeline).id(timeline.room.id)
-        case let .previewRoom(room):
+        case .previewRoom(let room):
             UI.RoomPreviewView(
                 preview: room.info(),
                 imageLoader: appState.matrixClient,
@@ -103,6 +104,57 @@ struct MainView: View {
                 appState.matrixClient = nil
             }
         }
+        .onOpenURL { url in
+            Logger.viewCycle.debug("onOpenUrl \(url)")
+
+            do {
+                let matrixUri = try Utils.MatrixUriScheme(parseUrl: url.absoluteString)
+                Logger.viewCycle.info("Matched Matrix Uri: \(url)")
+
+                guard let matrixClient = appState.matrixClient else {
+                    Logger.viewCycle.warning("Matrix client was nil so could not follow url")
+                    return
+                }
+
+                switch matrixUri.kind {
+                case .roomId(let roomId):
+                    Logger.viewCycle.debug("Matrix uri match roomId")
+                    Task {
+                        do {
+                            let roomPreview = try await matrixClient.client.getRoomPreviewFromRoomId(
+                                roomId: roomId,
+                                viaServers: matrixUri.routingVia
+                            )
+                            windowState.selectedScreen = .previewRoom(roomPreview)
+                        } catch {
+                            Logger.viewCycle.error("Failed to get room id from url: \(error)")
+                        }
+                    }
+                case .roomAlias(let alias):
+                    Logger.viewCycle.debug("Matrix uri match room alias")
+                    Task {
+                        do {
+                            let roomPreview = try await matrixClient.client.getRoomPreviewFromRoomAlias(roomAlias: alias)
+                            windowState.selectedScreen = .previewRoom(roomPreview)
+                        } catch {
+                            Logger.viewCycle.error("Failed to get room alias from url: \(error)")
+                        }
+                    }
+                case .user(let userId):
+                    Logger.viewCycle.debug("Matrix uri match user")
+                    Task {
+                        do {
+                            let userProfile = try await matrixClient.client.getProfile(userId: userId)
+                            // windowState.selectedScreen = .user(profile: userProfile)
+                        } catch {
+                            Logger.viewCycle.error("Failed to get user profile from url: \(error)")
+                        }
+                    }
+                }
+            } catch {
+                Logger.viewCycle.error("Failed to parse Matrix Uri: \(error)")
+            }
+        }
         .modifier(ToolbarViewModifier())
         .modifier(SearchViewModifier())
         .environment(windowState)
@@ -168,8 +220,4 @@ struct MainView: View {
             Logger.viewCycle.error("Failed to get room \(error)")
         }
     }
-}
-
-#Preview {
-    MainView()
 }

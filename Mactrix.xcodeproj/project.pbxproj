@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3409F4EC2EBFD8D4009537B4 /* UI in Frameworks */ = {isa = PBXBuildFile; productRef = 3409F4EB2EBFD8D4009537B4 /* UI */; };
+		345E77E82ED9F309002E5B9A /* Utils in Frameworks */ = {isa = PBXBuildFile; productRef = 345E77E72ED9F309002E5B9A /* Utils */; };
 		34913F6E2EC0F532003034CB /* MatrixRustSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 34913F6D2EC0F532003034CB /* MatrixRustSDK */; };
 		34913F702EC0F59F003034CB /* Models in Frameworks */ = {isa = PBXBuildFile; productRef = 34913F6F2EC0F59F003034CB /* Models */; };
 		34F7225F2EB531F40007B2A4 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 34F7225E2EB531F40007B2A4 /* KeychainAccess */; };
@@ -18,9 +19,22 @@
 		343858422EB394590010922A /* Mactrix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mactrix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		34DB0A2B2ED8C8FA009C6684 /* Exceptions for "Mactrix" folder in "Mactrix" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 343858412EB394590010922A /* Mactrix */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		343858442EB394590010922A /* Mactrix */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				34DB0A2B2ED8C8FA009C6684 /* Exceptions for "Mactrix" folder in "Mactrix" target */,
+			);
 			path = Mactrix;
 			sourceTree = "<group>";
 		};
@@ -33,6 +47,7 @@
 			files = (
 				3409F4EC2EBFD8D4009537B4 /* UI in Frameworks */,
 				34913F6E2EC0F532003034CB /* MatrixRustSDK in Frameworks */,
+				345E77E82ED9F309002E5B9A /* Utils in Frameworks */,
 				34913F702EC0F59F003034CB /* Models in Frameworks */,
 				34F7225F2EB531F40007B2A4 /* KeychainAccess in Frameworks */,
 			);
@@ -90,6 +105,7 @@
 				3409F4EB2EBFD8D4009537B4 /* UI */,
 				34913F6D2EC0F532003034CB /* MatrixRustSDK */,
 				34913F6F2EC0F59F003034CB /* Models */,
+				345E77E72ED9F309002E5B9A /* Utils */,
 			);
 			productName = Mactrix;
 			productReference = 343858422EB394590010922A /* Mactrix.app */;
@@ -102,7 +118,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					343858412EB394590010922A = {
@@ -300,6 +316,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mactrix/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mactrix;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -341,6 +358,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Mactrix/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mactrix;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -412,6 +430,10 @@
 		3409F4EB2EBFD8D4009537B4 /* UI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = UI;
+		};
+		345E77E72ED9F309002E5B9A /* Utils */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Utils;
 		};
 		34913F6D2EC0F532003034CB /* MatrixRustSDK */ = {
 			isa = XCSwiftPackageProductDependency;

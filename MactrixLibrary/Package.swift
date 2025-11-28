@@ -16,6 +16,7 @@ let package = Package(
             name: "Models",
             targets: ["Models"]
         ),
+        .library(name: "Utils", targets: ["Utils"]),
     ],
     /* dependencies: [
             .package(url: "https://github.com/matrix-org/matrix-rust-components-swift", from: "25.10.27"),
@@ -27,6 +28,8 @@ let package = Package(
             name: "UI",
             dependencies: ["Models"]
         ),
+        .target(name: "Utils"),
+        .testTarget(name: "UtilsTests", dependencies: ["Utils"]),
         /* .target(
                 name: "TimelineUI",
                 dependencies: ["Models", .product(name: "MatrixRustSDK", package: "matrix-rust-components-swift")]
