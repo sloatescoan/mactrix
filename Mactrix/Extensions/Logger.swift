@@ -10,4 +10,6 @@ extension Logger {
     static let liveTimeline = Logger(subsystem: subsystem, category: "live-timeline")
 
     static let viewCycle = Logger(subsystem: subsystem, category: "viewcycle")
+
+    static let notification = Logger(subsystem: subsystem, category: "notification")
 }

@@ -134,6 +134,110 @@ extension MatrixRustSDK.EventTimelineItem: Models.EventTimelineItem {
     }
 }
 
+extension MatrixRustSDK.MessageLikeEventType: @retroactive CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .callAnswer:
+            "call answer"
+        case .callCandidates:
+            "call candidates"
+        case .callHangup:
+            "call hangup"
+        case .callInvite:
+            "call invite"
+        case .rtcNotification:
+            "rtc notification"
+        case .keyVerificationAccept:
+            "key verification accept"
+        case .keyVerificationCancel:
+            "key verification cancel"
+        case .keyVerificationDone:
+            "key verification done"
+        case .keyVerificationKey:
+            "key verification key"
+        case .keyVerificationMac:
+            "key verification mac"
+        case .keyVerificationReady:
+            "key verification ready"
+        case .keyVerificationStart:
+            "key verification start"
+        case .pollEnd:
+            "poll end"
+        case .pollResponse:
+            "poll reponse"
+        case .pollStart:
+            "poll start"
+        case .reaction:
+            "reaction"
+        case .roomEncrypted:
+            "room encrypted"
+        case .roomMessage:
+            "room message"
+        case .roomRedaction:
+            "room redaction"
+        case .sticker:
+            "sticker"
+        case .unstablePollEnd:
+            "unstable poll end"
+        case .unstablePollResponse:
+            "unstable poll response"
+        case .unstablePollStart:
+            "unstable poll start"
+        case let .other(other):
+            other
+        }
+    }
+}
+
+extension MatrixRustSDK.OtherState: @retroactive CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .policyRuleRoom:
+            "changed policy rules for room"
+        case .policyRuleServer:
+            "changed policy rules for server"
+        case .policyRuleUser:
+            "changed policy rule for user"
+        case .roomAliases:
+            "changed room aliases"
+        case .roomAvatar(url: _):
+            "changed room avatar"
+        case .roomCanonicalAlias:
+            "changed room canonical alias"
+        case .roomCreate:
+            "created room"
+        case .roomEncryption:
+            "changed room encryption"
+        case .roomGuestAccess:
+            "changed room guest access"
+        case .roomHistoryVisibility:
+            "change room history visibility"
+        case .roomJoinRules:
+            "changed room join rules"
+        case let .roomName(name: name):
+            "changed room name to '\(name ?? "empty")'"
+        case .roomPinnedEvents(change: _):
+            "changed room pinned events"
+        case .roomPowerLevels(users: _, previous: _):
+            "changed room power levels"
+        case .roomServerAcl:
+            "changed room server acl"
+        case .roomThirdPartyInvite(displayName: _):
+            "changed room third party invite"
+        case .roomTombstone:
+            "room tombstone"
+        case let .roomTopic(topic: topic):
+            "changed room topic to '\(topic ?? "none")'"
+        case .spaceChild:
+            "changed space child"
+        case .spaceParent:
+            "changed space parent"
+        case let .custom(eventType: eventType):
+            "changed custom state '\(eventType)'"
+        }
+    }
+}
+
 extension MatrixRustSDK.SpaceRoom: @retroactive Identifiable {
     public var id: String {
         roomId

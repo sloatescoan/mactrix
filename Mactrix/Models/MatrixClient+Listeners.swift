@@ -1,7 +1,6 @@
 import Foundation
 import MatrixRustSDK
 import OSLog
-import UserNotifications
 
 extension MatrixClient: RoomListEntriesListener {
     nonisolated func onUpdate(roomEntriesUpdate: [RoomListEntriesUpdate]) {
@@ -33,12 +32,6 @@ extension MatrixClient: RoomListEntriesListener {
                 }
             }
         }
-    }
-}
-
-extension MatrixClient: SyncNotificationListener {
-    nonisolated func onNotification(notification: MatrixRustSDK.NotificationItem, roomId: String) {
-        Logger.matrixClient.debug("Received notification for room: \(roomId)")
     }
 }
 
