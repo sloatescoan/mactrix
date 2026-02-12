@@ -14,12 +14,9 @@ public struct UserProfileRow<Profile: UserProfile>: View {
 
     public var body: some View {
         Label {
-            Text(profile.displayName ?? profile.userId)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .help(profile.displayName ?? profile.userId)
+            Username(userProfile: profile)
         } icon: {
-            AvatarImage(avatarUrl: profile.avatarUrl, imageLoader: imageLoader, placeholder: { Image(systemName: "person") })
+            AvatarImage(userProfile: profile, imageLoader: imageLoader)
                 .clipShape(Circle())
         }
     }
@@ -36,12 +33,11 @@ public struct UserProfileRowLarge<Profile: UserProfile>: View {
 
     public var body: some View {
         HStack {
-            AvatarImage(avatarUrl: profile.avatarUrl, imageLoader: imageLoader)
+            AvatarImage(userProfile: profile, imageLoader: imageLoader)
                 .frame(width: 32, height: 32)
                 .clipShape(.circle)
             VStack(alignment: .leading) {
-                Text(profile.displayName ?? "No display name")
-                    .textSelection(.enabled)
+                Username(userProfile: profile)
                 Text(profile.userId)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

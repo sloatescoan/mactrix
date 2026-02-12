@@ -63,12 +63,12 @@ struct MessageTimestampView: View {
     }
 }
 
-public struct MessageEventProfileView: View {
-    let event: EventTimelineItem
+public struct MessageEventProfileView<Event: EventTimelineItem>: View {
+    let event: Event
     let actions: MessageEventActions
     let imageLoader: ImageLoader?
 
-    public init(event: EventTimelineItem, actions: MessageEventActions, imageLoader: ImageLoader?) {
+    public init(event: Event, actions: MessageEventActions, imageLoader: ImageLoader?) {
         self.event = event
         self.actions = actions
         self.imageLoader = imageLoader
@@ -86,12 +86,12 @@ public struct MessageEventProfileView: View {
         Button(action: actions.focusUser) {
             HStack(spacing: 0) {
                 HStack(spacing: 0) {
-                    AvatarImage(avatarUrl: event.senderProfileDetails.avatarUrl, imageLoader: imageLoader)
-                        .frame(width: 32, height: 32)
-                        .clipShape(Circle())
+                    AvatarImage(userProfile: event, imageLoader: imageLoader)
+                    .frame(width: 32, height: 32)
+                    .clipShape(Circle())
                 }.frame(width: 64)
 
-                Text(name)
+                Username(userProfile: event)
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

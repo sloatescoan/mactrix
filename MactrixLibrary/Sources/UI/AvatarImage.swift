@@ -1,5 +1,6 @@
 import OSLog
 import SwiftUI
+import Models
 
 @MainActor
 public protocol ImageLoader {
@@ -21,6 +22,15 @@ public struct AvatarImage<Preview: View>: View {
         self.avatarUrl = avatarUrl
         self.imageLoader = imageLoader
         self.placeholder = placeholder
+    }
+    
+    public init<Profile: UserProfile>(
+        userProfile: Profile,
+        imageLoader: ImageLoader?,
+    ) where Preview == UserAvatarPlaceholder<Profile> {
+        self.init(avatarUrl: userProfile.avatarUrl, imageLoader: imageLoader) {
+            UserAvatarPlaceholder(userProfile: userProfile)
+        }
     }
 
     @State private var avatar: Image? = nil
@@ -50,6 +60,27 @@ public struct AvatarImage<Preview: View>: View {
                         Logger.viewCycle.error("failed to load avatar (\(avatarUrl): \(error)")
                     }
                 }
+        }
+    }
+}
+
+public struct UserAvatarPlaceholder<Profile: UserProfile>: View {
+    let userProfile: Profile
+    
+    public var body: some View {
+        GeometryReader { g in
+            ZStack {
+                Color(userID: userProfile.id)
+                
+                if
+                    let initial = (userProfile.displayName ?? userProfile.id).uppercased().filter({ $0 != Character("@") }).first.map({ String($0) })
+                {
+                    Text(initial)
+                        .font(.system(size: g.size.width * 0.7))
+                        .fontWeight(.bold)
+                        .foregroundStyle(.background)
+                }
+            }
         }
     }
 }
