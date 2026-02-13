@@ -11,9 +11,9 @@ final class LiveSpaceRoomList {
     var rooms: [SidebarSpaceRoom] = []
     var paginationState: SpaceRoomListPaginationState = .loading
 
-    fileprivate var spaceListenerHandle: TaskHandle?
-    fileprivate var roomsListenerHandle: TaskHandle?
-    fileprivate var paginateListenerHandle: TaskHandle?
+    @ObservationIgnored fileprivate var spaceListener: MatrixRustListener<SpaceRoom?>?
+    @ObservationIgnored fileprivate var roomsListener: MatrixRustListener<[SpaceListUpdate]>?
+    @ObservationIgnored fileprivate var paginateListener: MatrixRustListener<SpaceRoomListPaginationState>?
 
     init(spaceService: LiveSpaceService, spaceRoomList: SpaceRoomList) {
         self.spaceService = spaceService
@@ -22,10 +22,73 @@ final class LiveSpaceRoomList {
         loadChildRooms()
     }
 
+    deinit {
+        Logger.liveSpaceRoomList.debug("LiveSpaceRoomList deinit")
+    }
+
     fileprivate func startListening() {
-        spaceListenerHandle = spaceRoomList.subscribeToSpaceUpdates(listener: self)
-        roomsListenerHandle = spaceRoomList.subscribeToRoomUpdate(listener: self)
-        paginateListenerHandle = spaceRoomList.subscribeToPaginationStateUpdates(listener: self)
+        spaceListener = MatrixRustListener(
+            configure: { continuation in
+                let listener = AnonymousSpaceRoomListSpaceListener { space in
+                    continuation.yield(space)
+                }
+                return self.spaceRoomList.subscribeToSpaceUpdates(listener: listener)
+            },
+            onElement: { [weak self] space in
+                self?.space = space
+            }
+        )
+
+        roomsListener = MatrixRustListener(
+            configure: { continuation in
+                let listener = AnonymousSpaceRoomListEntriesListener { rooms in
+                    continuation.yield(rooms)
+                }
+                return self.spaceRoomList.subscribeToRoomUpdate(listener: listener)
+            },
+            onElement: { [weak self] roomUpdates in
+                guard let self else { return }
+
+                for update in roomUpdates {
+                    switch update {
+                    case let .append(values):
+                        rooms.append(contentsOf: values.map { SidebarSpaceRoom(spaceService: self.spaceService, spaceRoom: $0) })
+                    case .clear:
+                        rooms.removeAll()
+                    case let .pushFront(room):
+                        rooms.insert(SidebarSpaceRoom(spaceService: self.spaceService, spaceRoom: room), at: 0)
+                    case let .pushBack(room):
+                        rooms.append(SidebarSpaceRoom(spaceService: self.spaceService, spaceRoom: room))
+                    case .popFront:
+                        rooms.removeFirst()
+                    case .popBack:
+                        rooms.removeLast()
+                    case let .insert(index, room):
+                        rooms.insert(SidebarSpaceRoom(spaceService: self.spaceService, spaceRoom: room), at: Int(index))
+                    case let .set(index, room):
+                        rooms[Int(index)] = SidebarSpaceRoom(spaceService: self.spaceService, spaceRoom: room)
+                    case let .remove(index):
+                        rooms.remove(at: Int(index))
+                    case let .truncate(length):
+                        rooms.removeSubrange(Int(length) ..< rooms.count)
+                    case let .reset(values: values):
+                        rooms = values.map { SidebarSpaceRoom(spaceService: self.spaceService, spaceRoom: $0) }
+                    }
+                }
+            }
+        )
+        
+        paginateListener = MatrixRustListener(
+            configure: { continuation in
+                let listener = AnonymousSpaceRoomListPaginationStateListener { paginationState in
+                    continuation.yield(paginationState)
+                }
+                return self.spaceRoomList.subscribeToPaginationStateUpdates(listener: listener)
+            },
+            onElement: { [weak self] state in
+                self?.paginationState = state
+            }
+        )
     }
 
     func loadChildRooms() {
@@ -39,47 +102,29 @@ final class LiveSpaceRoomList {
     }
 }
 
-extension LiveSpaceRoomList: SpaceRoomListSpaceListener, SpaceRoomListEntriesListener, SpaceRoomListPaginationStateListener {
-    nonisolated func onUpdate(paginationState: MatrixRustSDK.SpaceRoomListPaginationState) {
-        Task { @MainActor in
-            self.paginationState = paginationState
-        }
-    }
+final class AnonymousSpaceRoomListPaginationStateListener: SpaceRoomListPaginationStateListener {
+    let callback: @Sendable (MatrixRustSDK.SpaceRoomListPaginationState) -> Void
+    init(callback: @Sendable @escaping (MatrixRustSDK.SpaceRoomListPaginationState) -> Void) { self.callback = callback }
 
-    nonisolated func onUpdate(space: MatrixRustSDK.SpaceRoom?) {
-        Task { @MainActor in
-            self.space = space
-        }
+    func onUpdate(paginationState: MatrixRustSDK.SpaceRoomListPaginationState) {
+        callback(paginationState)
     }
+}
 
-    nonisolated func onUpdate(rooms roomUpdates: [MatrixRustSDK.SpaceListUpdate]) {
-        Task { @MainActor in
-            for update in roomUpdates {
-                switch update {
-                case let .append(values):
-                    rooms.append(contentsOf: values.map { SidebarSpaceRoom(spaceService: spaceService, spaceRoom: $0) })
-                case .clear:
-                    rooms.removeAll()
-                case let .pushFront(room):
-                    rooms.insert(SidebarSpaceRoom(spaceService: spaceService, spaceRoom: room), at: 0)
-                case let .pushBack(room):
-                    rooms.append(SidebarSpaceRoom(spaceService: spaceService, spaceRoom: room))
-                case .popFront:
-                    rooms.removeFirst()
-                case .popBack:
-                    rooms.removeLast()
-                case let .insert(index, room):
-                    rooms.insert(SidebarSpaceRoom(spaceService: spaceService, spaceRoom: room), at: Int(index))
-                case let .set(index, room):
-                    rooms[Int(index)] = SidebarSpaceRoom(spaceService: spaceService, spaceRoom: room)
-                case let .remove(index):
-                    rooms.remove(at: Int(index))
-                case let .truncate(length):
-                    rooms.removeSubrange(Int(length) ..< rooms.count)
-                case let .reset(values: values):
-                    rooms = values.map { SidebarSpaceRoom(spaceService: spaceService, spaceRoom: $0) }
-                }
-            }
-        }
+final class AnonymousSpaceRoomListEntriesListener: SpaceRoomListEntriesListener {
+    let callback: @Sendable ([MatrixRustSDK.SpaceListUpdate]) -> Void
+    init(callback: @Sendable @escaping ([MatrixRustSDK.SpaceListUpdate]) -> Void) { self.callback = callback }
+
+    func onUpdate(rooms: [MatrixRustSDK.SpaceListUpdate]) {
+        callback(rooms)
+    }
+}
+
+final class AnonymousSpaceRoomListSpaceListener: SpaceRoomListSpaceListener {
+    let callback: @Sendable (MatrixRustSDK.SpaceRoom?) -> Void
+    init(callback: @Sendable @escaping (MatrixRustSDK.SpaceRoom?) -> Void) { self.callback = callback }
+
+    func onUpdate(space: MatrixRustSDK.SpaceRoom?) {
+        callback(space)
     }
 }

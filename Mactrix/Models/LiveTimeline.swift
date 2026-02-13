@@ -5,21 +5,19 @@ import SwiftUI
 
 @MainActor @Observable
 public final class LiveTimeline {
-    nonisolated let room: LiveRoom
+    public let room: LiveRoom
     public let isThreadFocus: Bool
 
     public var timeline: Timeline?
 
-    private var timelineHandle: TaskHandle?
-    private var paginateHandle: TaskHandle?
+    @ObservationIgnored private var timelineListener: MatrixRustListener<[TimelineDiff]>?
+    @ObservationIgnored private var paginateListener: MatrixRustListener<RoomPaginationStatus>?
 
     public var scrollPosition = ScrollPosition(idType: TimelineGroup.ID.self, edge: .bottom)
     public var errorMessage: String?
 
     public private(set) var focusedTimelineEventId: EventOrTransactionId?
     public private(set) var focusedTimelineGroupId: String?
-
-    // public var focusedThreadTimeline: LiveTimeline?
 
     public var sendReplyTo: MatrixRustSDK.EventTimelineItem?
 
@@ -55,7 +53,11 @@ public final class LiveTimeline {
         }
     }
 
-    func configureTimeline(threadId: String? = nil) async throws {
+    deinit {
+        Logger.liveTimeline.debug("Timeline deinit")
+    }
+
+    private func configureTimeline(threadId: String? = nil) async throws {
         let focus = if let threadId {
             TimelineFocus.thread(rootEventId: threadId)
         } else {
@@ -72,14 +74,53 @@ public final class LiveTimeline {
         )
         timeline = try await room.room.timelineWithConfiguration(configuration: config)
 
-        // Listen to timeline item updates.
-        timelineHandle = await timeline?.addListener(listener: self)
+        startTimelineListener()
 
         // Only main timelines can subscibe to back pagination status
         if threadId == nil {
-            // Listen to paginate loading status updates.
-            paginateHandle = try await timeline?.subscribeToBackPaginationStatus(listener: self)
+            startPaginationStatusListener()
         }
+    }
+
+    private func startTimelineListener() {
+        guard let timeline else { return }
+
+        timelineListener = MatrixRustListener(
+            configure: { continuation in
+                let listener = AnonymousTimelineListener { diff in
+                    continuation.yield(diff)
+                }
+                return await timeline.addListener(listener: listener)
+            },
+            onElement: { [weak self] diff in
+                self?.updateTimeline(diff: diff)
+            }
+        )
+    }
+
+    private func startPaginationStatusListener() {
+        guard let timeline else { return }
+
+        paginateListener = MatrixRustListener(
+            configure: { continuation in
+                let listener = AnonymousPaginationStatusListener { status in
+                    continuation.yield(status)
+                }
+
+                do {
+                    return try await timeline.subscribeToBackPaginationStatus(listener: listener)
+                } catch {
+                    Logger.liveTimeline.error("Failed to subscribe to back pagination status: \(error)")
+                    return nil
+                }
+            },
+            onElement: { [weak self] status in
+                guard let self else { return }
+
+                Logger.liveTimeline.debug("updating timeline paginating: \(status.debugDescription)")
+                paginating = status
+            }
+        )
     }
 
     public func fetchOlderMessages() async throws {
@@ -112,77 +153,75 @@ public final class LiveTimeline {
     }
 }
 
-extension LiveTimeline: TimelineListener {
-    public nonisolated func onUpdate(diff: [TimelineDiff]) {
-        Task { @MainActor in
-            let oldView = scrollPosition.viewID
-            let oldEdge = scrollPosition.edge
-            Logger.liveTimeline.trace("onUpdate old view \(oldView.debugDescription) \(oldEdge.debugDescription)")
+final class AnonymousTimelineListener: TimelineListener {
+    let callback: @Sendable ([TimelineDiff]) -> Void
+    init(callback: @Sendable @escaping ([TimelineDiff]) -> Void) { self.callback = callback }
 
-            var updatedIds = Set<String>()
-
-            for update in diff {
-                switch update {
-                case let .append(values):
-                    timelineItems.append(contentsOf: values)
-                    for value in values {
-                        updatedIds.insert(value.uniqueId().id)
-                    }
-                case .clear:
-                    timelineItems.removeAll()
-                case let .pushFront(room):
-                    timelineItems.insert(room, at: 0)
-                    updatedIds.insert(room.uniqueId().id)
-                case let .pushBack(room):
-                    timelineItems.append(room)
-                    updatedIds.insert(room.uniqueId().id)
-                case .popFront:
-                    timelineItems.removeFirst()
-                case .popBack:
-                    timelineItems.removeLast()
-                case let .insert(index, room):
-                    timelineItems.insert(room, at: Int(index))
-                    updatedIds.insert(room.uniqueId().id)
-                case let .set(index, room):
-                    timelineItems[Int(index)] = room
-                    updatedIds.insert(room.uniqueId().id)
-                case let .remove(index):
-                    timelineItems.remove(at: Int(index))
-                case let .truncate(length):
-                    timelineItems.removeSubrange(Int(length) ..< timelineItems.count)
-                case let .reset(values: values):
-                    timelineItems = values
-                    for value in values {
-                        updatedIds.insert(value.uniqueId().id)
-                    }
-                }
-            }
-
-            timelineGroups.updateItems(items: timelineItems, updatedIds: updatedIds)
-
-            /* if let timelineItems {
-                 self.timelineUpdateVersion += 1
-
-                 let oldTimeline = timelineGroups
-                 timelineGroups = TimelineGroup.construct(fromTimelineItems: timelineItems, version: self.timelineUpdateVersion)
-
-                 Logger.liveTimeline.info("Old == New \(oldTimeline == self.timelineGroups), hashes: \(oldTimeline.hashValue) == \(self.timelineGroups.hashValue), changed ids: \(changedIds)")
-             } */
-
-            if let oldEdge {
-                scrollPosition.scrollTo(edge: oldEdge)
-            } else if let oldView {
-                scrollPosition.scrollTo(id: oldView, anchor: .top)
-            }
-        }
+    func onUpdate(diff: [TimelineDiff]) {
+        callback(diff)
     }
 }
 
-extension LiveTimeline: PaginationStatusListener {
-    public nonisolated func onUpdate(status: MatrixRustSDK.RoomPaginationStatus) {
-        Task { @MainActor in
-            Logger.liveTimeline.debug("updating timeline paginating: \(status.debugDescription)")
-            paginating = status
+final class AnonymousPaginationStatusListener: PaginationStatusListener {
+    let callback: @Sendable (MatrixRustSDK.RoomPaginationStatus) -> Void
+    init(callback: @Sendable @escaping (MatrixRustSDK.RoomPaginationStatus) -> Void) { self.callback = callback }
+
+    func onUpdate(status: MatrixRustSDK.RoomPaginationStatus) {
+        callback(status)
+    }
+}
+
+extension LiveTimeline {
+    private func updateTimeline(diff: [TimelineDiff]) {
+        let oldView = scrollPosition.viewID
+        let oldEdge = scrollPosition.edge
+        Logger.liveTimeline.trace("onUpdate old view \(oldView.debugDescription) \(oldEdge.debugDescription)")
+
+        var updatedIds = Set<String>()
+
+        for update in diff {
+            switch update {
+            case let .append(values):
+                timelineItems.append(contentsOf: values)
+                for value in values {
+                    updatedIds.insert(value.uniqueId().id)
+                }
+            case .clear:
+                timelineItems.removeAll()
+            case let .pushFront(room):
+                timelineItems.insert(room, at: 0)
+                updatedIds.insert(room.uniqueId().id)
+            case let .pushBack(room):
+                timelineItems.append(room)
+                updatedIds.insert(room.uniqueId().id)
+            case .popFront:
+                timelineItems.removeFirst()
+            case .popBack:
+                timelineItems.removeLast()
+            case let .insert(index, room):
+                timelineItems.insert(room, at: Int(index))
+                updatedIds.insert(room.uniqueId().id)
+            case let .set(index, room):
+                timelineItems[Int(index)] = room
+                updatedIds.insert(room.uniqueId().id)
+            case let .remove(index):
+                timelineItems.remove(at: Int(index))
+            case let .truncate(length):
+                timelineItems.removeSubrange(Int(length) ..< timelineItems.count)
+            case let .reset(values: values):
+                timelineItems = values
+                for value in values {
+                    updatedIds.insert(value.uniqueId().id)
+                }
+            }
+        }
+
+        timelineGroups.updateItems(items: timelineItems, updatedIds: updatedIds)
+
+        if let oldEdge {
+            scrollPosition.scrollTo(edge: oldEdge)
+        } else if let oldView {
+            scrollPosition.scrollTo(id: oldView, anchor: .top)
         }
     }
 }
