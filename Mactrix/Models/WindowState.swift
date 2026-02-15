@@ -32,6 +32,8 @@ final class WindowState {
 
     var inspectorContent: InspectorContent = .roomInfo
 
+    var sessionVerificationRequested: Bool = false
+
     var searchQuery: String = ""
     var searchTokens: [SearchToken] = []
     var searchDirectResult: SearchDirectResult?

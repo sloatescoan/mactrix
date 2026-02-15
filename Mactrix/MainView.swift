@@ -85,6 +85,7 @@ struct MainView: View {
                             } catch {
                                 Logger.viewCycle.error("failed to approve verification: \(error)")
                                 appState.matrixClient?.sessionVerificationData = nil
+                                windowState.sessionVerificationRequested = false
                             }
                         case .decline:
                             do {
@@ -93,6 +94,7 @@ struct MainView: View {
                                 Logger.viewCycle.error("failed to decline verification: \(error)")
                                 appState.matrixClient?.sessionVerificationData = nil
                             }
+                            windowState.sessionVerificationRequested = false
                         }
                     }
                 })

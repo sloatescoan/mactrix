@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SessionVerificationStatusView: View {
     @Environment(AppState.self) var appState
+    @Environment(WindowState.self) var windowState
     @Environment(\.colorScheme) var colorScheme
 
     @ViewBuilder
@@ -23,10 +24,14 @@ struct SessionVerificationStatusView: View {
             VStack {
                 Label("Unverified session", systemImage: "exclamationmark.shield")
                     .frame(maxWidth: .infinity)
-                Button("Verify session") {
+                if windowState.sessionVerificationRequested {
+                    Text("Verfication requested.")
+                }
+                Button(windowState.sessionVerificationRequested ? "Request again" : "Verify session") {
                     Task {
                         do {
                             try await appState.matrixClient?.requestDeviceVerification()
+                            windowState.sessionVerificationRequested = true
                         } catch {
                             Logger.viewCycle.error("request device verification failed: \(error)")
                         }
